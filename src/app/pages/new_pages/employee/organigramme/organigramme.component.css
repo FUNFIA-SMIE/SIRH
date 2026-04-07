@@ -1,0 +1,12 @@
+/* Assure que la ligne horizontale ne dépasse pas les bords des enfants extrêmes */
+ul.flex > li:first-child > .absolute.top-0 {
+  left: 50%;
+  width: 50%;
+}
+ul.flex > li:last-child > .absolute.top-0 {
+  right: 50%;
+  width: 50%;
+}
+ul.flex > li:only-child > .absolute.top-0 {
+  display: none;
+}

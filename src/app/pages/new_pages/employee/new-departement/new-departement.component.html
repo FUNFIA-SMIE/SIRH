@@ -1,0 +1,50 @@
+<div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+  <div class="w-full max-w-lg overflow-hidden rounded-2xl bg-white shadow-2xl dark:bg-slate-900">
+    <div class="border-b border-slate-100 p-6 dark:border-slate-800">
+      <h3 class="text-xl font-bold text-slate-900 dark:text-white">{{ editMode ? 'Modifier le Département' : 'Détails du Département' }}</h3>
+    </div>
+    
+    <form [formGroup]="departmentForm" (ngSubmit)="onSubmit()" class="p-6">
+      <div class="grid grid-cols-2 gap-4">
+        <div class="col-span-1 space-y-2">
+          <label class="text-sm font-medium text-slate-700 dark:text-slate-300">Code</label>
+          <input type="text" formControlName="code" placeholder="ex: DSI" class="w-full rounded-lg border border-slate-200 bg-slate-50 p-2.5 text-sm transition focus:border-indigo-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white" />
+        </div>
+        <div class="col-span-1 space-y-2">
+          <label class="text-sm font-medium text-slate-700 dark:text-slate-300">Nom</label>
+          <input type="text" formControlName="nom" placeholder="Nom du service" class="w-full rounded-lg border border-slate-200 bg-slate-50 p-2.5 text-sm transition focus:border-indigo-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white" />
+        </div>
+        
+        <div class="col-span-2 space-y-2">
+          <label class="text-sm font-medium text-slate-700 dark:text-slate-300">Département Parent</label>
+          <select formControlName="parent_id" class="w-full rounded-lg border border-slate-200 bg-slate-50 p-2.5 text-sm focus:border-indigo-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white">
+            <option [value]="null">Aucun (Niveau racine)</option>
+            <option *ngFor="let dept of departments" [value]="dept.id">{{ dept.nom_departement }}</option>
+          </select>
+        </div>
+
+        <div class="col-span-2 space-y-2">
+          <label class="text-sm font-medium text-slate-700 dark:text-slate-300">Responsable (Manager)</label>
+          <select formControlName="responsable_id" class="w-full rounded-lg border border-slate-200 bg-slate-50 p-2.5 text-sm focus:border-indigo-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white">
+            <option *ngFor="let emp of employees" [value]="emp.employe_id">{{ emp.nom_employe }} {{ emp.prenom_employe }}</option>
+          </select>
+        </div>
+<!--
+        <div class="col-span-1 space-y-2">
+          <label class="text-sm font-medium text-slate-700 dark:text-slate-300">Budget Annuel</label>
+          <input type="number" formControlName="budget_annuel" placeholder="Ar" class="w-full rounded-lg border border-slate-200 bg-slate-50 p-2.5 text-sm focus:border-indigo-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white" />
+        </div>
+        <div class="col-span-1 space-y-2">
+          <label class="text-sm font-medium text-slate-700 dark:text-slate-300">Effectif Max</label>
+          <input type="number" formControlName="effectif_max" class="w-full rounded-lg border border-slate-200 bg-slate-50 p-2.5 text-sm focus:border-indigo-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white" />
+        </div>
+-->
+      </div>
+
+      <div class="mt-8 flex justify-end gap-3">
+        <button type="button" (click)="cancel()" class="rounded-lg px-4 py-2 text-sm font-medium text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800">Annuler</button>
+        <button type="submit" [disabled]="!departmentForm.valid" class="rounded-lg bg-indigo-600 px-6 py-2 text-sm font-semibold text-white hover:bg-indigo-700 shadow-md disabled:opacity-50">{{ editMode ? 'Mettre à jour' : 'Enregistrer' }}</button>
+      </div>
+    </form>
+  </div>
+</div>

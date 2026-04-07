@@ -1,0 +1,89 @@
+<div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+    <div class="w-full max-w-2xl overflow-hidden rounded-3xl bg-white shadow-2xl dark:bg-slate-900">
+        <div class="bg-violet-600 px-8 py-6 text-white">
+            <h3 class="text-xl font-bold">Configuration du Poste</h3>
+            <p class="text-sm opacity-80 text-violet-100">Définissez les critères et avantages du poste.</p>
+        </div>
+
+        <form class="p-8">
+            <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
+                <div class="space-y-2">
+                    <label class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Code du
+                        poste</label>
+                    <input type="text" placeholder="P-001"
+                        class="w-full rounded-xl border-slate-200 bg-slate-50 p-3 text-sm focus:ring-2 focus:ring-violet-500 dark:border-slate-700 dark:bg-slate-800 dark:text-white" />
+                </div>
+                <div class="space-y-2">
+                    <label
+                        class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Intitulé</label>
+                    <input type="text" placeholder="ex: Architecte Cloud"
+                        class="w-full rounded-xl border-slate-200 bg-slate-50 p-3 text-sm focus:ring-2 focus:ring-violet-500 dark:border-slate-700 dark:bg-slate-800 dark:text-white" />
+                </div>
+
+                <div class="space-y-2">
+                    <label class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Famille
+                        métier</label>
+                    <select
+                        class="w-full rounded-xl border-slate-200 bg-slate-50 p-3 text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-white">
+                        <option>Ingénierie</option>
+                        <option>RH</option>
+                        <option>Finance</option>
+                    </select>
+                </div>
+                <div class="space-y-2 flex gap-4">
+                    <div class="flex-1 space-y-2">
+                        <label
+                            class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Classification</label>
+                        <input type="text" placeholder="Cadre"
+                            class="w-full rounded-xl border-slate-200 bg-slate-50 p-3 text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-white" />
+                    </div>
+                    <div class="w-24 space-y-2">
+                        <label
+                            class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Niveau</label>
+                        <input type="number" value="1"
+                            class="w-full rounded-xl border-slate-200 bg-slate-50 p-3 text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-white" />
+                    </div>
+                </div>
+
+                <div class="col-span-2 grid grid-cols-2 gap-4 rounded-2xl bg-slate-50 p-4 dark:bg-slate-800/50">
+                    <div class="space-y-2">
+                        <label class="text-xs font-bold text-slate-500">Salaire Min (Ar)</label>
+                        <input type="number"
+                            class="w-full bg-transparent border-b border-slate-300 py-1 text-lg font-bold focus:border-violet-500 focus:outline-none dark:text-white" />
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-xs font-bold text-slate-500">Salaire Max (Ar)</label>
+                        <input type="number"
+                            class="w-full bg-transparent border-b border-slate-300 py-1 text-lg font-bold focus:border-violet-500 focus:outline-none dark:text-white" />
+                    </div>
+                </div>
+
+                <div class="col-span-2 space-y-2">
+                    <label class="text-xs font-bold uppercase tracking-wider text-slate-500">Compétences requises
+                        (Séparez par virgule)</label>
+                    <textarea rows="2"
+                        class="w-full rounded-xl border-slate-200 bg-slate-50 p-3 text-sm focus:ring-2 focus:ring-violet-500 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                        placeholder="React, SQL, Management..."></textarea>
+                </div>
+            </div>
+
+            <div class="mt-8 flex items-center justify-between border-t border-slate-100 pt-6 dark:border-slate-800">
+                <label class="flex items-center gap-3 cursor-pointer">
+                    <input type="checkbox" checked
+                        class="h-5 w-5 rounded border-slate-300 text-violet-600 focus:ring-violet-500" />
+                    <span class="text-sm font-medium text-slate-600 dark:text-slate-400">Poste actif</span>
+                </label>
+                <div class="flex gap-3">
+                    <button id="btnFermer" type="button"
+                        class="rounded-xl px-6 py-2 text-sm font-semibold text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800">
+                        Fermer
+                    </button>
+                    <button type="submit"
+                        class="rounded-xl bg-violet-600 px-8 py-2 text-sm font-bold text-white shadow-lg shadow-violet-500/30 hover:bg-violet-700">
+                        Sauvegarder
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
