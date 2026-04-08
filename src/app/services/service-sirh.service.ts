@@ -12,16 +12,16 @@ export class ServiceSirhService {
 
   constructor(private http: HttpClient) { }
 
-  getAllEmployees() {
-
-    return this.http.get(`${this.url}/employes`)
+  getAllEmployees(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.url}/employes`);
   }
 
-  async getEmployeeById(id: number) {
+  async getEmployeeById(id: string) {
     const response = await fetch(`${this.url}/employes/${id}`);
     return await response.json();
   }
 
+  /*
   async createEmployee(employee: any) {
     const response = await fetch(`${this.url}/employes`, {
       method: 'POST',
@@ -32,9 +32,9 @@ export class ServiceSirhService {
     });
     return await response.json();
   }
+*/
 
-
-  updateEmployee(id: number, employee: any) {
+  updateEmployee(id: string, employee: any) {
     return fetch(`${this.url}/employes/${id}`, {
       method: 'PUT',
       headers: {
@@ -44,7 +44,7 @@ export class ServiceSirhService {
     }).then((response) => response.json());
   }
 
-  deleteEmployee(id: number) {
+  deleteEmployee(id: string) {
     return fetch(`${this.url}/employes/${id}`, {
       method: 'DELETE',
     }).then((response) => response.json());
@@ -111,5 +111,16 @@ export class ServiceSirhService {
     return this.http.get(`${this.url}/postes/${id}`)
   }
 
+  createEmploye(employe: any): Observable<any> {
+    return this.http.post(`${this.url}/employes`, employe);
+  }
+
+  updateEmploye(id: any, employe: any): Observable<any> {
+    return this.http.put(`${this.url}/employes/${id}`, employe);
+  }
+
+  deleteEmploye(id: any): Observable<any> {
+    return this.http.delete(`${this.url}/employes/${id}`);
+  }
 
 }

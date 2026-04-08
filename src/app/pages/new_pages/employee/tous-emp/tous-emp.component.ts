@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, Inject, OnInit } from '@angular/core';
 import { DOCUMENT } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { ServiceSirhService } from '../../../../services/service-sirh.service';
 
 @Component({
@@ -16,59 +16,48 @@ export class TousEmpComponent implements OnInit {
 
 
 
-  employees = [
-    {
-      id: 1,
-      name: 'Jean Dupont',
-      email: 'jean.dupont@funfia.mg',
-      role: 'Médecin Généraliste',
-      department: 'Médecine du travail',
-      status: 'Actif',
-      // Image réaliste via Unsplash Source
-      imageUrl: 'https://images.unsplash.com/photo-1599566150163-29194dcaad36?&w=200&q=80&auto=format&fit=crop'
-    },
-    {
-      id: 2,
-      name: 'Alice Moreau',
-      email: 'alice.m@funfia.mg',
-      role: 'Secrétaire Médicale',
-      department: 'Administration',
-      status: 'En congé',
-      imageUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?&w=200&q=80&auto=format&fit=crop'
-    },
-    {
-      id: 3,
-      name: 'Dr. Marc Chen',
-      email: 'marc.chen@funfia.mg',
-      role: 'Cardiologue',
-      department: 'Médecine du travail',
-      status: 'Actif',
-      imageUrl: 'https://images.unsplash.com/photo-1547037579-f0fc020ac3be?&w=200&q=80&auto=format&fit=crop'
-    },
-    {
-      id: 4,
-      name: 'Sophie Dubois',
-      email: 'sophie.d@funfia.mg',
-      role: 'Infirmière',
-      department: 'Médecine du travail',
-      status: 'Actif',
-      imageUrl: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?&w=200&q=80&auto=format&fit=crop'
-    },
-    // Ajoutez plus d'employés ici...
-  ];
-  data_employe: any;
+  data_employe: any[] = [];
 
   constructor(
     @Inject(DOCUMENT)
     private document: Document,
-    private serviceSirh: ServiceSirhService
+    private serviceSirh: ServiceSirhService,
+    private router: Router
   ) {
     // Optionnel : Vérifier les préférences du système au chargement
     this.detectSystemTheme();
   }
   async ngOnInit(): Promise<void> {
-    this.data_employe = await this.serviceSirh.getAllEmployees().toPromise();
-    console.log(this.data_employe);
+    try {
+      this.data_employe = await this.serviceSirh.getAllEmployees().toPromise() as any[];
+      console.log('Employés récupérés :', this.data_employe);
+    } catch (error) {
+      console.error('Erreur lors du chargement des employés :', error);
+      this.data_employe = [];
+    }
+  }
+
+  async editEmployee(id: string): Promise<void> {
+    await this.router.navigate(['/new_employe', id], { queryParams: { mode: 'edit' } });
+  }
+
+  async viewEmployee(id: string): Promise<void> {
+    await this.router.navigate(['/new_employe', id], { queryParams: { mode: 'detail' } });
+  }
+
+  async deleteEmployee(id: string): Promise<void> {
+    const confirmed = confirm('Voulez-vous vraiment supprimer cet employé ?');
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      await this.serviceSirh.deleteEmploye(id).toPromise();
+      this.data_employe = this.data_employe.filter(emp => (emp.employe_id || emp.id) !== id);
+    } catch (error) {
+      console.error('Erreur lors de la suppression :', error);
+      alert('Erreur lors de la suppression de l\'employé.');
+    }
   }
 
   // Méthode pour basculer le mode sombre

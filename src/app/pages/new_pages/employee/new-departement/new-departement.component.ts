@@ -23,7 +23,7 @@ export class NewDepartementComponent implements OnInit {
       code: new FormControl('', Validators.required),
       nom: new FormControl('', Validators.required),
       parent_id: new FormControl(null),
-      responsable_id: new FormControl('', Validators.required),
+      responsable_id: new FormControl(''),
       /*
       budget_annuel: new FormControl('', [Validators.required, Validators.min(0)]),
       effectif_max: new FormControl('', [Validators.required, Validators.min(1)])

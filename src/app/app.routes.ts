@@ -52,6 +52,11 @@ export const routes: Routes = [
 
       },
       {
+        path: 'new_employe/:id',
+        component: NewEmployeComponent,
+        title: 'Modifier un employé'
+      },
+      {
         path: 'organigramme',
         component: OrganigrammeComponent,
         title: 'Organigramme'
