@@ -99,6 +99,43 @@ export class ServiceSirhService {
     return this.http.patch(`${this.url}/postes/${id}`, poste);
   }
 
+  // Congé methods
+  getSoldesConge(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.url}/soldes-conge`);
+  }
+
+  getDemandesEnAttente(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.url}/conges/en-attente`);
+  }
+
+  approuverDemande(id: string): Observable<any> {
+    return this.http.patch(`${this.url}/conges/${id}/approuver`, {});
+  }
+
+  refuserDemande(id: string): Observable<any> {
+    return this.http.patch(`${this.url}/conges/${id}/refuser`, {});
+  }
+
+  getTypesConge(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.url}/types-conge`);
+  }
+
+  createTypeConge(type: any): Observable<any> {
+    return this.http.post(`${this.url}/types-conge`, type);
+  }
+
+  updateTypeConge(id: string, type: any): Observable<any> {
+    return this.http.patch(`${this.url}/types-conge/${id}`, type);
+  }
+
+  deleteTypeConge(id: string): Observable<any> {
+    return this.http.delete(`${this.url}/types-conge/${id}`);
+  }
+
+  getAllConges(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.url}/conges`);
+  }
+
   deletePoste(id: number) {
     return this.http.delete(`${this.url}/postes/${id}`);
   }

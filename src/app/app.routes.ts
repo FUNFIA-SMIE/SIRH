@@ -26,6 +26,10 @@ import { DepartementComponent } from './pages/new_pages/employee/departement/dep
 import { NewDepartementComponent } from './pages/new_pages/employee/new-departement/new-departement.component';
 import { PosteComponent } from './pages/new_pages/employee/poste/poste.component';
 import { NewPosteComponent } from './pages/new_pages/employee/new-poste/new-poste.component';
+import { SoldesComponent } from './pages/new_pages/conges/soldes/soldes.component';
+import { DemandeEnAttenteComponent } from './pages/new_pages/conges/demande-en-attente/demande-en-attente.component';
+import { ConfigurationComponent } from './pages/new_pages/conges/configuration/configuration.component';
+import { CalendrierComponent } from './pages/new_pages/conges/calendrier/calendrier.component';
 
 export const routes: Routes = [
   {
@@ -96,6 +100,34 @@ export const routes: Routes = [
         path: 'new-poste',
         component: NewPosteComponent,
         title: 'Nouveau Poste'
+
+      },
+
+      {
+        path: 'soldes',
+        component: SoldesComponent,
+        title: 'Soldes de Congé'
+
+      },
+
+      {
+        path: 'demande-en-attente',
+        component: DemandeEnAttenteComponent,
+        title: 'Demandes en Attente'
+
+      },
+
+      {
+        path: 'configuration-conge',
+        component: ConfigurationComponent,
+        title: 'Configuration Congé'
+
+      },
+
+      {
+        path: 'calendrier-conge',
+        component: CalendrierComponent,
+        title: 'Calendrier Congé'
 
       },
 

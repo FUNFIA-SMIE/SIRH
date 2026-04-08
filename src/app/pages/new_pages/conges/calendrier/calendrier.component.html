@@ -1,0 +1,77 @@
+<div class="p-6 bg-gray-50 min-h-screen">
+  <div class="max-w-7xl mx-auto">
+    <h1 class="text-3xl font-bold text-gray-900 mb-6">Calendrier des Congés</h1>
+
+    <!-- Month Navigation -->
+    <div class="flex justify-between items-center mb-6">
+      <button (click)="previousMonth()" class="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-md">
+        Précédent
+      </button>
+      <h2 class="text-2xl font-semibold text-gray-800">{{ currentMonth | date:'MMMM yyyy' }}</h2>
+      <button (click)="nextMonth()" class="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-md">
+        Suivant
+      </button>
+    </div>
+
+    <!-- Calendar Grid -->
+    <div class="bg-white shadow-lg rounded-lg overflow-hidden">
+      <div class="grid grid-cols-7 gap-px bg-gray-200">
+        <!-- Days of week header -->
+        <div *ngFor="let day of weekDays" class="bg-gray-100 px-4 py-3 text-center text-sm font-medium text-gray-500">
+          {{ day }}
+        </div>
+
+        <!-- Calendar days -->
+        <div *ngFor="let day of calendarDays"
+             class="bg-white px-4 py-3 min-h-[100px] relative"
+             [ngClass]="{
+               'bg-gray-50': !day.isCurrentMonth,
+               'cursor-pointer hover:bg-blue-50': day.isCurrentMonth
+             }"
+             (click)="day.isCurrentMonth && selectDay(day)">
+          <div class="text-sm font-medium text-gray-900 mb-1"
+               [ngClass]="{'text-gray-400': !day.isCurrentMonth}">
+            {{ day.date.getDate() }}
+          </div>
+
+          <!-- Leave indicators -->
+          <div *ngFor="let conge of getCongesForDay(day.date)" class="mb-1">
+            <div class="text-xs bg-blue-100 text-blue-800 px-1 py-0.5 rounded truncate"
+                 [title]="conge.employeNom + ' - ' + conge.typeConge">
+              {{ conge.employeNom }}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Selected Day Details -->
+    <div *ngIf="selectedDay" class="mt-6 bg-white shadow-lg rounded-lg p-6">
+      <h3 class="text-lg font-semibold text-gray-900 mb-4">
+        Congés du {{ selectedDay | date:'dd/MM/yyyy' }}
+      </h3>
+
+      <div *ngIf="selectedDayConges.length === 0" class="text-gray-500">
+        Aucun congé ce jour-là.
+      </div>
+
+      <div *ngFor="let conge of selectedDayConges" class="border-b border-gray-200 pb-4 mb-4 last:border-b-0 last:pb-0 last:mb-0">
+        <div class="flex justify-between items-start">
+          <div>
+            <p class="font-medium text-gray-900">{{ conge.employeNom }}</p>
+            <p class="text-sm text-gray-600">{{ conge.typeConge }}</p>
+            <p class="text-sm text-gray-500">{{ conge.dateDebut | date:'dd/MM/yyyy' }} - {{ conge.dateFin | date:'dd/MM/yyyy' }}</p>
+          </div>
+          <span class="px-2 py-1 text-xs font-medium rounded-full"
+                [ngClass]="{
+                  'bg-green-100 text-green-800': conge.statut === 'approuve',
+                  'bg-yellow-100 text-yellow-800': conge.statut === 'en_attente',
+                  'bg-red-100 text-red-800': conge.statut === 'refuse'
+                }">
+            {{ conge.statut | titlecase }}
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

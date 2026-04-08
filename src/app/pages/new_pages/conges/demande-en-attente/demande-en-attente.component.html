@@ -1,0 +1,62 @@
+<div class="p-6 bg-gray-50 min-h-screen">
+  <div class="max-w-7xl mx-auto">
+    <h1 class="text-3xl font-bold text-gray-900 mb-6">Demandes de Congé en Attente</h1>
+
+    <div class="space-y-4">
+      <div *ngFor="let demande of demandesEnAttente" class="bg-white shadow-lg rounded-lg p-6">
+        <div class="flex justify-between items-start mb-4">
+          <div>
+            <h3 class="text-lg font-semibold text-gray-900">{{ demande.employeNom }}</h3>
+            <p class="text-sm text-gray-600">{{ demande.typeConge }}</p>
+          </div>
+          <span class="px-3 py-1 text-sm font-medium rounded-full"
+                [ngClass]="{
+                  'bg-yellow-100 text-yellow-800': demande.statut === 'en_attente',
+                  'bg-blue-100 text-blue-800': demande.statut === 'soumis'
+                }">
+            {{ demande.statut | titlecase }}
+          </span>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Date de début</label>
+            <p class="text-sm text-gray-900">{{ demande.dateDebut | date:'dd/MM/yyyy' }}</p>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Date de fin</label>
+            <p class="text-sm text-gray-900">{{ demande.dateFin | date:'dd/MM/yyyy' }}</p>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Nombre de jours</label>
+            <p class="text-sm text-gray-900">{{ demande.nbJours }} jours</p>
+          </div>
+        </div>
+
+        <div *ngIf="demande.motif" class="mb-4">
+          <label class="block text-sm font-medium text-gray-700">Motif</label>
+          <p class="text-sm text-gray-900">{{ demande.motif }}</p>
+        </div>
+
+        <div class="flex space-x-3">
+          <button (click)="approuverDemande(demande.id)"
+                  class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm font-medium">
+            Approuver
+          </button>
+          <button (click)="refuserDemande(demande.id)"
+                  class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-sm font-medium">
+            Refuser
+          </button>
+          <button (click)="voirDetails(demande.id)"
+                  class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium">
+            Voir Détails
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div *ngIf="demandesEnAttente.length === 0" class="text-center py-12">
+      <p class="text-gray-500 text-lg">Aucune demande en attente.</p>
+    </div>
+  </div>
+</div>

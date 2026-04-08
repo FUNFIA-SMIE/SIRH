@@ -1,0 +1,42 @@
+<div class="p-6 bg-gray-50 min-h-screen">
+  <div class="max-w-7xl mx-auto">
+    <h1 class="text-3xl font-bold text-gray-900 mb-6">Soldes de Congé</h1>
+
+    <div class="bg-white shadow-lg rounded-lg overflow-hidden">
+      <div class="px-6 py-4 bg-gray-100 border-b border-gray-200">
+        <h2 class="text-xl font-semibold text-gray-800">Vos soldes actuels</h2>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+          <thead class="bg-gray-50">
+            <tr>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type de Congé</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Année</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Solde Initial</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acquis</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Pris</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">En Attente</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Restant</th>
+            </tr>
+          </thead>
+          <tbody class="bg-white divide-y divide-gray-200">
+            <tr *ngFor="let solde of soldes">
+              <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ solde.typeLibelle }}</td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ solde.annee }}</td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ solde.soldeInitial }} jours</td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ solde.soldeAcquis }} jours</td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ solde.soldePris }} jours</td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ solde.soldeEnAttente }} jours</td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-green-600">{{ solde.soldeRestant }} jours</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div *ngIf="soldes.length === 0" class="px-6 py-4 text-center text-gray-500">
+        Aucun solde de congé trouvé.
+      </div>
+    </div>
+  </div>
+</div>
