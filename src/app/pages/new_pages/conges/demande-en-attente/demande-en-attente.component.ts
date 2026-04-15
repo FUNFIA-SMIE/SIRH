@@ -69,8 +69,8 @@ export interface SoldeConge {
   styleUrl: './demande-en-attente.component.css',
 })
 export class DemandeEnAttenteComponent implements OnInit {
-  private allDemandes: DemandeConge[] = [];
-  filtered: DemandeConge[] = [];
+  private allDemandes: any;
+  filtered: any;
   typesConge: any;
 
   // ── Filtres ────────────────────────────────────────────────
@@ -80,10 +80,10 @@ export class DemandeEnAttenteComponent implements OnInit {
   solde_par_employe: any;
 
   // ── KPI ───────────────────────────────────────────────────
-  get countEnAttente() { return this.allDemandes.filter(d => d.statut === 'en_attente_manager' || d.statut === 'en_attente_rh').length; }
-  get totalJoursDemandes() { return Math.round(this.allDemandes.reduce((s, d) => s + d.nbJours, 0)); }
-  get countApprouves() { return this.allDemandes.filter(d => d.statut === 'approuve').length; }
-  get countRefuses() { return this.allDemandes.filter(d => d.statut === 'refuse').length; }
+  get countEnAttente() { return this.allDemandes.filter((d: { statut: string; }) => d.statut === 'en_attente_manager' || d.statut === 'en_attente_rh').length; }
+  get totalJoursDemandes() { return Math.round(this.allDemandes.reduce((s: any, d: { nbJours: any; }) => s + d.nbJours, 0)); }
+  get countApprouves() { return this.allDemandes.filter((d: { statut: string; }) => d.statut === 'approuve').length; }
+  get countRefuses() { return this.allDemandes.filter((d: { statut: string; }) => d.statut === 'refuse').length; }
 
   // ── Modal refus ───────────────────────────────────────────
   modalRefusVisible = false;
@@ -130,26 +130,69 @@ export class DemandeEnAttenteComponent implements OnInit {
   }
 
   // ── Chargement ────────────────────────────────────────────
-  async loadData(): Promise<void> {
-    this.allDemandes = MOCK_DEMANDES;
-    this.typesConge = await this.service.getTypes().toPromise(); // Remplace le mock par un appel réel
-    this.listeEmployes = await this.service.getAllEmployees().toPromise(); // Remplace le mock par un appel réel
+async loadData(): Promise<void> {
+  try {
+    // 1. Initialisation pour éviter les erreurs "undefined" dans le template
+    this.allDemandes = [];
+    this.filtered = [];
 
+    // 2. Récupération des données
+    const rawDemandes = await this.service.getAllConges().toPromise() || [];
+    this.typesConge = await this.service.getTypes().toPromise() || [];
+    this.listeEmployes = await this.service.getAllEmployees().toPromise() || [];
+
+    // 3. Transformation des données "plates" du SQL en format "imbriqué" pour le HTML
+    this.allDemandes = rawDemandes.map((d: any) => ({
+      ...d,
+      // On crée l'objet 'employe' attendu par d.employe.nom dans le HTML
+      employe: {
+        nom: d.nom,
+        prenom: d.prenom,
+        matricule: d.matricule,
+        poste: d.poste || 'Collaborateur'
+      },
+      // On crée l'objet 'typeConge' attendu par d.typeConge.libelle
+      typeConge: {
+        libelle: d.type_conge,
+        code: d.code_type || 'CP',
+        validation_rh: d.validation_rh
+      },
+      // Mapping des noms de colonnes SQL vers les variables CamelCase du HTML
+      dateDebut: d.date_debut,
+      dateFin: d.date_fin,
+      nbJours: d.nb_jours,
+      createdAt: d.created_at,
+      demiJourneeFin: d.demi_journee_fin,
+      soldeRestant: d.solde_restant || 0
+    }));
+
+    console.log('Demandes restructurées :', this.allDemandes);
     this.applyFilters();
-  }
 
-  // ── Filtrage ──────────────────────────────────────────────
-  applyFilters(): void {
-    const q = this.searchQuery.toLowerCase().trim();
-    const st = this.filterStatut;
-    const ty = this.filterType;
-    this.filtered = this.allDemandes.filter(d => {
-      const mq = !q || d.employe.nom.toLowerCase().includes(q) || d.typeConge.libelle.toLowerCase().includes(q);
-      const ms = !st || d.statut === st;
-      const mt = !ty || d.typeConge.libelle === ty;
-      return mq && ms && mt;
-    });
+  } catch (error) {
+    console.error('Erreur lors du chargement', error);
   }
+}
+
+applyFilters(): void {
+  // Sécurité si loadData n'est pas fini
+  if (!this.allDemandes) return;
+
+  const q = this.searchQuery.toLowerCase().trim();
+  const st = this.filterStatut;
+  const ty = this.filterType;
+
+  this.filtered = this.allDemandes.filter((d: any) => {
+    const nomComplet = `${d.employe.nom} ${d.employe.prenom}`.toLowerCase();
+    const typeLibelle = d.typeConge.libelle.toLowerCase();
+
+    const matchQuery = !q || nomComplet.includes(q) || typeLibelle.includes(q);
+    const matchStatut = !st || d.statut === st;
+    const matchType = !ty || d.typeConge.libelle === ty;
+
+    return matchQuery && matchStatut && matchType;
+  });
+}
 
   // ── Helpers ───────────────────────────────────────────────
   initiales(nom: string): string {

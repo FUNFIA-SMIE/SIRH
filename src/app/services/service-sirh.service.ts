@@ -133,7 +133,7 @@ export class ServiceSirhService {
   }
 
   getAllConges(): Observable<any[]> {
-    return this.http.get<any[]>(`${this.url}/conges`);
+    return this.http.get<any[]>(`${this.url}/conges/conges_en_attente`);
   }
 
   deletePoste(id: number) {
