@@ -211,7 +211,7 @@
           </div>
           <!-- Étape RH si validation_rh requise et non encore faite -->
           <div
-            *ngIf="d.typeConge.validationRh && d.statut !== 'approuve' && d.statut !== 'refuse' && d.statut !== 'en_attente_rh'"
+            *ngIf="d.typeConge.validation_rh && d.statut !== 'approuve' && d.statut !== 'refuse' && d.statut !== 'en_attente_rh'"
             class="flex items-center gap-2 text-xs text-gray-400 dark:text-slate-500">
             <div
               class="w-4 h-4 rounded-full bg-gray-100 dark:bg-[#21293D] flex items-center justify-center flex-shrink-0">
@@ -352,33 +352,35 @@
         <div class="col-span-2">
           <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Type de congé</label>
           <div class="flex gap-2">
-            <select formControlName="type_conge_id"
+            <select (change)="getSoldeAffiche()" formControlName="type_conge_id"
               class="flex-1 bg-gray-50 dark:bg-[#1C2333] border border-gray-200 dark:border-[#21293D] rounded-xl p-3 text-sm text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500">
               <option *ngFor="let t of typesConge" [value]="t.id">{{ t.libelle }}</option>
             </select>
             <div *ngIf="selectedEmploye"
               class="px-4 py-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl text-amber-700 dark:text-amber-400 text-sm font-bold">
-              Solde: {{ getSoldeAffiche() }}j
+              Solde: {{ solde_par_employe }}j
             </div>
           </div>
         </div>
 
         <div class="md:col-span-1">
           <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Date de début</label>
-          <input type="date" formControlName="date_debut"
+          <input type="date" formControlName="date_debut" (change)="calculerJours()"
             class="w-full bg-gray-50 dark:bg-[#1C2333] border border-gray-200 dark:border-[#21293D] rounded-xl p-3 text-sm text-gray-900 dark:text-white outline-none focus:border-blue-500">
           <label class="flex items-center gap-2 mt-2 cursor-pointer">
-            <input type="checkbox" formControlName="demi_journee_debut" class="rounded border-gray-300 text-blue-600">
+            <input type="checkbox" formControlName="demi_journee_debut" (change)="calculerJours()"
+              class="rounded border-gray-300 text-blue-600">
             <span class="text-[11px] text-gray-500">Commencer l'après-midi</span>
           </label>
         </div>
 
         <div class="md:col-span-1">
           <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Date de fin</label>
-          <input type="date" formControlName="date_fin"
+          <input type="date" formControlName="date_fin" (change)="calculerJours()"
             class="w-full bg-gray-50 dark:bg-[#1C2333] border border-gray-200 dark:border-[#21293D] rounded-xl p-3 text-sm text-gray-900 dark:text-white outline-none focus:border-blue-500">
           <label class="flex items-center gap-2 mt-2 cursor-pointer">
-            <input type="checkbox" formControlName="demi_journee_fin" class="rounded border-gray-300 text-blue-600">
+            <input type="checkbox" formControlName="demi_journee_fin" (change)="calculerJours()"
+              class="rounded border-gray-300 text-blue-600">
             <span class="text-[11px] text-gray-500">Terminer le matin</span>
           </label>
         </div>
@@ -388,6 +390,33 @@
           <textarea formControlName="motif" rows="2"
             class="w-full bg-gray-50 dark:bg-[#1C2333] border border-gray-200 dark:border-[#21293D] rounded-xl p-3 text-sm text-gray-900 dark:text-white outline-none focus:border-blue-500 resize-none"
             placeholder="Optionnel..."></textarea>
+        </div>
+      </div>
+
+
+      <div class="col-span-2" *ngIf="selectedEmploye">
+        <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Justificatif
+          (Optionnel)</label>
+        <div class="flex items-center gap-3">
+          <label
+            class="flex-1 flex items-center gap-3 bg-gray-50 dark:bg-[#1C2333] border border-gray-200 dark:border-[#21293D] rounded-xl p-3 cursor-pointer hover:border-blue-500 transition-all">
+            <svg class="w-5 h-5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+            </svg>
+            <span class="text-sm text-gray-500 truncate">
+              {{ justificatifBase64 ? 'Fichier chargé' : 'Téléverser un document (PDF, Image)' }}
+            </span>
+            <input type="file" class="hidden" (change)="onFileSelected($event)" accept=".pdf,image/*">
+          </label>
+
+          <div *ngIf="justificatifBase64"
+            class="w-11 h-11 rounded-lg border border-gray-200 dark:border-[#21293D] overflow-hidden bg-white">
+            <img *ngIf="!justificatifBase64.includes('pdf')" [src]="justificatifBase64"
+              class="w-full h-full object-cover">
+            <div *ngIf="justificatifBase64.includes('pdf')"
+              class="w-full h-full flex items-center justify-center text-[10px] font-bold text-red-500">PDF</div>
+          </div>
         </div>
       </div>
 
@@ -409,4 +438,17 @@
       </div>
     </form>
   </div>
+</div>
+
+<div *ngIf="notification" 
+     class="fixed top-5 right-5 z-[100] flex items-center p-4 mb-4 w-full max-w-xs rounded-2xl shadow-2xl border animate-in slide-in-from-right duration-300"
+     [ngClass]="notification.type === 'success' ? 'bg-emerald-50 border-emerald-200 dark:bg-emerald-900/20 dark:border-emerald-800' : 'bg-red-50 border-red-200 dark:bg-red-900/20 dark:border-red-800'">
+    
+    <div class="inline-flex items-center justify-center flex-shrink-0 w-8 h-8 rounded-lg"
+         [ngClass]="notification.type === 'success' ? 'text-emerald-500 bg-emerald-100 dark:bg-emerald-800 dark:text-emerald-200' : 'text-red-500 bg-red-100 dark:bg-red-800 dark:text-red-200'">
+        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>
+    </div>
+    <div class="ml-3 text-sm font-bold" [ngClass]="notification.type === 'success' ? 'text-emerald-800 dark:text-emerald-400' : 'text-red-800 dark:text-red-400'">
+        {{ notification.message }}
+    </div>
 </div>

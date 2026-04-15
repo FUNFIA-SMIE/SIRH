@@ -1,14 +1,18 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
+import { ServiceSirhService } from '../../../../services/service-sirh.service';
+import { SoldesComponent } from '../soldes/soldes.component';
 
 export interface TypeConge {
   id: string;
   code: string;
   libelle: string;
-  validationRh: boolean;
-  seuilRhJours: number | null;
-  justificatifRequis: boolean;
+  validation_rh: boolean;        // ← snake_case comme la BDD
+  seuil_rh_jours: number | null;
+  justificatif_requis: boolean;  // ← snake_case
+  deductible_solde: boolean;     // ← nouveau champ
+  actif: boolean;
 }
 
 export interface WorkflowEtape {
@@ -48,6 +52,16 @@ export interface EmployeLight {
   soldes: Record<string, number>; // typeCongeId -> solde
 }
 
+export interface SoldeConge {
+  libelle: string;
+  code: string;
+  solde_initial: number;
+  solde_acquis: number;
+  solde_pris: number;
+  solde_en_attente: number;
+  solde_restant: number;
+}
+
 @Component({
   selector: 'app-demande-en-attente',
   imports: [CommonModule, ReactiveFormsModule, FormsModule],
@@ -57,12 +71,13 @@ export interface EmployeLight {
 export class DemandeEnAttenteComponent implements OnInit {
   private allDemandes: DemandeConge[] = [];
   filtered: DemandeConge[] = [];
-  typesConge: TypeConge[] = [];
+  typesConge: any;
 
   // ── Filtres ────────────────────────────────────────────────
   searchQuery = '';
   filterStatut = '';
   filterType = '';
+  solde_par_employe: any;
 
   // ── KPI ───────────────────────────────────────────────────
   get countEnAttente() { return this.allDemandes.filter(d => d.statut === 'en_attente_manager' || d.statut === 'en_attente_rh').length; }
@@ -79,8 +94,8 @@ export class DemandeEnAttenteComponent implements OnInit {
   // ── Modal création ────────────────────────────────────────
   modalCreationVisible = false;
   fileName = '';
-  selectedEmploye: EmployeLight | null = null;
-  listeEmployes: EmployeLight[] = MOCK_EMPLOYES;
+  selectedEmploye: any | null = null;
+  listeEmployes: any;
 
   // ── Avatar palette ────────────────────────────────────────
   private readonly AVATARS = [
@@ -91,7 +106,9 @@ export class DemandeEnAttenteComponent implements OnInit {
 
   congeForm!: FormGroup;
 
-  constructor(private fb: FormBuilder) {
+  constructor(
+    private service: ServiceSirhService,
+    private fb: FormBuilder) {
     this.initForm();
   }
 
@@ -113,9 +130,11 @@ export class DemandeEnAttenteComponent implements OnInit {
   }
 
   // ── Chargement ────────────────────────────────────────────
-  loadData(): void {
+  async loadData(): Promise<void> {
     this.allDemandes = MOCK_DEMANDES;
-    this.typesConge = [...new Map(MOCK_DEMANDES.map(d => [d.typeConge.id, d.typeConge])).values()];
+    this.typesConge = await this.service.getTypes().toPromise(); // Remplace le mock par un appel réel
+    this.listeEmployes = await this.service.getAllEmployees().toPromise(); // Remplace le mock par un appel réel
+
     this.applyFilters();
   }
 
@@ -208,12 +227,13 @@ export class DemandeEnAttenteComponent implements OnInit {
       commentaire: null,
       createdAt: new Date(),
     });
+    /*
     if (d.typeConge.validationRh && niveauActuel === 1) {
       d.statut = 'en_attente_rh';
     } else {
       d.statut = 'approuve';
       d.soldeRestant = Math.max(0, d.soldeRestant - d.nbJours);
-    }
+    }*/
     this.applyFilters();
   }
 
@@ -276,77 +296,162 @@ export class DemandeEnAttenteComponent implements OnInit {
 
   onEmployeSelected(): void {          // ← méthode manquante ajoutée
     const id = this.congeForm.get('employe_id')?.value;
-    this.selectedEmploye = this.listeEmployes.find(e => e.id === id) ?? null;
+    this.selectedEmploye = this.listeEmployes.find((e: { id: any; }) => e.id === id) ?? null;
     // Réinitialise le type de congé quand on change d'employé
     this.congeForm.patchValue({ type_conge_id: '' });
   }
+  soldesEmploye: SoldeConge[] = [];
+  loadingSoldes = false;
 
-  getSoldeAffiche(): number {          // ← méthode manquante ajoutée
+  async getSoldeAffiche(): Promise<any> {
+
+
     if (!this.selectedEmploye) return 0;
     const typeId = this.congeForm.get('type_conge_id')?.value;
-    return this.selectedEmploye.soldes[typeId] ?? 0;
+    if (!typeId) return 0;
+
+
+    this.solde_par_employe = await this.service.getSoldes(this.selectedEmploye.employe_id, typeId).toPromise();
+    this.solde_par_employe = this.solde_par_employe[0].solde_restant;
+
+    console.log('Soldes récupérés pour l\'employé', this.solde_par_employe);
+
+    return this.solde_par_employe;
+
   }
 
   calculerJours(): number {
     const values = this.congeForm.value;
     if (!values.date_debut || !values.date_fin) return 0;
+
     const debut = new Date(values.date_debut);
     const fin = new Date(values.date_fin);
+
     if (isNaN(debut.getTime()) || isNaN(fin.getTime())) return 0;
-    let diff = (fin.getTime() - debut.getTime()) / (1000 * 3600 * 24) + 1;
-    if (this.congeForm.get('demi_journee_debut')?.value) diff -= 0.5;
-    if (this.congeForm.get('demi_journee_fin')?.value) diff -= 0.5;
-    return diff < 0 ? 0 : diff;
+
+    // On remet les heures à zéro pour ne comparer que les jours
+    debut.setHours(0, 0, 0, 0);
+    fin.setHours(0, 0, 0, 0);
+
+    if (fin < debut) return 0;
+
+    // Calcul de la différence en jours (1000ms * 3600s * 24h)
+    const diffTime = fin.getTime() - debut.getTime();
+    let diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24)) + 1;
+
+    // Gestion des demi-journées
+    if (values.demi_journee_debut) diffDays -= 0.5;
+    if (values.demi_journee_fin) diffDays -= 0.5;
+
+    return diffDays < 0 ? 0 : diffDays;
+  }
+
+  justificatifBase64: string | null = null;
+
+  onFileSelected(event: any) {
+    const file = event.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        // Le résultat contient "data:image/png;base64,iVBOR..."
+        this.justificatifBase64 = reader.result as string;
+      };
+      reader.readAsDataURL(file);
+    }
   }
 
   isJustificatifRequis(): boolean {
     const typeId = this.congeForm.get('type_conge_id')?.value;
-    const typeSelectionne = this.typesConge.find(t => t.id === typeId);
+    const typeSelectionne = this.typesConge.find((t: { id: any; }) => t.id === typeId);
     return !!typeSelectionne?.justificatifRequis;
   }
+  /*
+    async soumettreDemande(): Promise<void> {           // ← méthode manquante ajoutée
+      if (this.congeForm.invalid) return;
+  
+      const v = this.congeForm.value;
+      const employe = this.listeEmployes.find((e: { id: any; }) => e.id === v.employe_id)!;
+      const typeConge = this.typesConge.find((t: { id: any; }) => t.id === v.type_conge_id)!;
+  
+      const nouvelle: DemandeConge = {
+        id: crypto.randomUUID(),
+        employe: {
+          id: employe.id,
+          nom: `${employe.nom_employe} ${employe.prenom_employe}`,
+          poste: 'N/A',
+          matricule: employe.matricule,
+        },
+        typeConge,
+        dateDebut: new Date(v.date_debut),
+        dateFin: new Date(v.date_fin),
+        nbJours: this.calculerJours(),
+        demiJourneeDebut: v.demi_journee_debut,
+        demiJourneeFin: v.demi_journee_fin,
+        statut: 'en_attente_manager',
+        motif: v.motif || null,
+        justificatifUrl: this.justificatifBase64 || null,
+        commentaireRefus: null,
+        soldeRestant: this.solde_par_employe,
+        createdAt: new Date(),
+        workflow: [{
+          id: crypto.randomUUID(),
+          niveau: 1,
+          approbateur: 'Système',
+          action: 'soumis',
+          commentaire: null,
+          createdAt: new Date(),
+        }],
+      };
+  
+      this.allDemandes.unshift(nouvelle);
+      this.applyFilters();
+      this.closeCreationModal();
+  
+      console.log('Nouvelle demande créée', nouvelle);
+  
+      // TODO: this.sirhService.creerDemande(nouvelle).subscribe(() => this.loadData());
+    }
+    */
 
-  soumettreDemande(): void {           // ← méthode manquante ajoutée
+  async soumettreDemande(): Promise<void> {
     if (this.congeForm.invalid) return;
 
     const v = this.congeForm.value;
-    const employe = this.listeEmployes.find(e => e.id === v.employe_id)!;
-    const typeConge = this.typesConge.find(t => t.id === v.type_conge_id)!;
 
-    const nouvelle: DemandeConge = {
+    console.log('Form values', v);
+    const typeId = this.congeForm.get('type_conge_id')?.value;
+
+    // Préparation de l'objet pour le Backend (format snake_case comme la DB)
+    const payload = {
       id: crypto.randomUUID(),
-      employe: {
-        id: employe.id,
-        nom: `${employe.nom_employe} ${employe.prenom_employe}`,
-        poste: 'N/A',
-        matricule: employe.matricule,
-      },
-      typeConge,
-      dateDebut: new Date(v.date_debut),
-      dateFin: new Date(v.date_fin),
-      nbJours: this.calculerJours(),
-      demiJourneeDebut: v.demi_journee_debut,
-      demiJourneeFin: v.demi_journee_fin,
-      statut: 'en_attente_manager',
+      employe_id: this.selectedEmploye.employe_id,
+      type_conge_id: typeId,
+      date_debut: v.date_debut,
+      date_fin: v.date_fin,
+      nb_jours: this.calculerJours(),
       motif: v.motif || null,
-      justificatifUrl: v.justificatif_url || null,
-      commentaireRefus: null,
-      soldeRestant: this.getSoldeAffiche(),
-      createdAt: new Date(),
-      workflow: [{
-        id: crypto.randomUUID(),
-        niveau: 1,
-        approbateur: 'Système',
-        action: 'soumis',
-        commentaire: null,
-        createdAt: new Date(),
-      }],
+      demi_journee_debut: v.demi_journee_debut || false,
+      demi_journee_fin: v.demi_journee_fin || false,
+      justificatif: this.justificatifBase64 || null // La string Base64
     };
 
-    this.allDemandes.unshift(nouvelle);
-    this.applyFilters();
-    this.closeCreationModal();
+    this.service.creerConge(payload).subscribe({
+      next: (res) => {
+        this.showToast('Demande envoyée avec succès !', 'success');
+        this.loadData();
+        this.closeCreationModal(); this.justificatifBase64 = null; // Reset
+      },
+      error: (err) => {
+        this.showToast(err.error.error || 'Une erreur est survenue', 'error');
+      }
+    });
+  }
 
-    // TODO: this.sirhService.creerDemande(nouvelle).subscribe(() => this.loadData());
+  notification: { message: string, type: 'success' | 'error' } | null = null;
+
+  showToast(message: string, type: 'success' | 'error') {
+    this.notification = { message, type };
+    setTimeout(() => this.notification = null, 4000); // Disparaît après 4s
   }
 }
 
@@ -375,7 +480,9 @@ const MOCK_EMPLOYES: EmployeLight[] = [
 ];
 
 // ── Mock demandes ─────────────────────────────────────────────
+
 const MOCK_DEMANDES: DemandeConge[] = [
+  /*
   {
     id: '1',
     employe: { id: 'e1', nom: 'Rakoto Jean', poste: 'Développeur Full Stack', matricule: 'EMP2601' },
@@ -418,5 +525,5 @@ const MOCK_DEMANDES: DemandeConge[] = [
     statut: 'en_attente_manager', motif: 'Cérémonie de mariage familiale.',
     justificatifUrl: null, commentaireRefus: null, soldeRestant: 15, createdAt: new Date('2026-04-09'),
     workflow: [{ id: 'w5', niveau: 1, approbateur: 'Hery Lanto (Manager)', action: 'soumis', commentaire: null, createdAt: new Date('2026-04-09') }],
-  },
+  },*/
 ];
