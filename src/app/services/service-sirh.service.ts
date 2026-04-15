@@ -183,4 +183,15 @@ export class ServiceSirhService {
     return this.http.get(`${this.url}/conges/type_conge`);
   }
 
+  valider_conges(data: any): Observable<any> {
+    return this.http.patch(`${this.url}/conges/valider/${data.id}`, data);
+  }
+
+  refuser_conges(data: any): Observable<any> {
+    return this.http.patch(`${this.url}/conges/refuser/${data.id}`, data);
+  }
+
+  solde_conges_employe():Observable<any> {
+    return this.http.get(`${this.url}/conges/employe_solde`);
+  }
 }

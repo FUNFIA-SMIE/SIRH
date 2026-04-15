@@ -130,69 +130,70 @@ export class DemandeEnAttenteComponent implements OnInit {
   }
 
   // ── Chargement ────────────────────────────────────────────
-async loadData(): Promise<void> {
-  try {
-    // 1. Initialisation pour éviter les erreurs "undefined" dans le template
-    this.allDemandes = [];
-    this.filtered = [];
+  async loadData(): Promise<void> {
+    try {
+      // 1. Initialisation pour éviter les erreurs "undefined" dans le template
+      this.allDemandes = [];
+      this.filtered = [];
 
-    // 2. Récupération des données
-    const rawDemandes = await this.service.getAllConges().toPromise() || [];
-    this.typesConge = await this.service.getTypes().toPromise() || [];
-    this.listeEmployes = await this.service.getAllEmployees().toPromise() || [];
+      // 2. Récupération des données
+      const rawDemandes = await this.service.getAllConges().toPromise() || [];
+      this.typesConge = await this.service.getTypes().toPromise() || [];
+      this.listeEmployes = await this.service.getAllEmployees().toPromise() || [];
 
-    // 3. Transformation des données "plates" du SQL en format "imbriqué" pour le HTML
-    this.allDemandes = rawDemandes.map((d: any) => ({
-      ...d,
-      // On crée l'objet 'employe' attendu par d.employe.nom dans le HTML
-      employe: {
-        nom: d.nom,
-        prenom: d.prenom,
-        matricule: d.matricule,
-        poste: d.poste || 'Collaborateur'
-      },
-      // On crée l'objet 'typeConge' attendu par d.typeConge.libelle
-      typeConge: {
-        libelle: d.type_conge,
-        code: d.code_type || 'CP',
-        validation_rh: d.validation_rh
-      },
-      // Mapping des noms de colonnes SQL vers les variables CamelCase du HTML
-      dateDebut: d.date_debut,
-      dateFin: d.date_fin,
-      nbJours: d.nb_jours,
-      createdAt: d.created_at,
-      demiJourneeFin: d.demi_journee_fin,
-      soldeRestant: d.solde_restant || 0
-    }));
+      // 3. Transformation des données "plates" du SQL en format "imbriqué" pour le HTML
+      this.allDemandes = rawDemandes.map((d: any) => ({
+        ...d,
+        // On crée l'objet 'employe' attendu par d.employe.nom dans le HTML
+        employe: {
+          nom: d.nom,
+          prenom: d.prenom,
+          matricule: d.matricule,
+          poste: d.poste || 'Collaborateur'
+        },
+        // On crée l'objet 'typeConge' attendu par d.typeConge.libelle
+        typeConge: {
+          libelle: d.type_conge,
+          code: d.code_type || 'CP',
+          validation_rh: d.validation_rh
+        },
+        // Mapping des noms de colonnes SQL vers les variables CamelCase du HTML
+        dateDebut: d.date_debut,
+        dateFin: d.date_fin,
+        nbJours: d.nb_jours,
+        createdAt: d.created_at,
+        demiJourneeFin: d.demi_journee_fin,
+        soldeRestant: d.solde_restant || 0,
+        soldeInitial: d.solde_initial || 0,
+      }));
 
-    console.log('Demandes restructurées :', this.allDemandes);
-    this.applyFilters();
+      console.log('Demandes restructurées :', this.allDemandes);
+      this.applyFilters();
 
-  } catch (error) {
-    console.error('Erreur lors du chargement', error);
+    } catch (error) {
+      console.error('Erreur lors du chargement', error);
+    }
   }
-}
 
-applyFilters(): void {
-  // Sécurité si loadData n'est pas fini
-  if (!this.allDemandes) return;
+  applyFilters(): void {
+    // Sécurité si loadData n'est pas fini
+    if (!this.allDemandes) return;
 
-  const q = this.searchQuery.toLowerCase().trim();
-  const st = this.filterStatut;
-  const ty = this.filterType;
+    const q = this.searchQuery.toLowerCase().trim();
+    const st = this.filterStatut;
+    const ty = this.filterType;
 
-  this.filtered = this.allDemandes.filter((d: any) => {
-    const nomComplet = `${d.employe.nom} ${d.employe.prenom}`.toLowerCase();
-    const typeLibelle = d.typeConge.libelle.toLowerCase();
+    this.filtered = this.allDemandes.filter((d: any) => {
+      const nomComplet = `${d.employe.nom} ${d.employe.prenom}`.toLowerCase();
+      const typeLibelle = d.typeConge.libelle.toLowerCase();
 
-    const matchQuery = !q || nomComplet.includes(q) || typeLibelle.includes(q);
-    const matchStatut = !st || d.statut === st;
-    const matchType = !ty || d.typeConge.libelle === ty;
+      const matchQuery = !q || nomComplet.includes(q) || typeLibelle.includes(q);
+      const matchStatut = !st || d.statut === st;
+      const matchType = !ty || d.typeConge.libelle === ty;
 
-    return matchQuery && matchStatut && matchType;
-  });
-}
+      return matchQuery && matchStatut && matchType;
+    });
+  }
 
   // ── Helpers ───────────────────────────────────────────────
   initiales(nom: string): string {
@@ -260,23 +261,35 @@ applyFilters(): void {
   }
 
   // ── Actions liste ─────────────────────────────────────────
-  approuver(d: DemandeConge): void {
-    const niveauActuel = d.workflow.at(-1)?.niveau ?? 1;
-    d.workflow.push({
-      id: crypto.randomUUID(),
-      niveau: niveauActuel,
-      approbateur: 'Vous',
-      action: 'approuve',
-      commentaire: null,
-      createdAt: new Date(),
+  approuver(d: any): void {
+
+
+    console.log('Approuver demande', d);
+
+    // 1. Récupération de l'ID de l'utilisateur actuel
+    // const approbateurId = this.authService.getUserId();
+    const data = {
+      id: d.id,
+      approbateur_id: '82d713ee-6e72-4139-ad01-d9ff7fe48989',
+      commentaire: 'Approuvé via le portail',
+    }
+
+    // 2. Appel au service backend
+    this.service.valider_conges(data).subscribe({
+      next: (res) => {
+        // 3. Mise à jour de l'interface locale : on retire la demande validée
+        this.allDemandes = this.allDemandes.filter((item: { id: any; }) => item.id !== d.id);
+        this.applyFilters();
+
+        // Optionnel : Notification de succès
+        // this.toast.success('La demande a été approuvée');
+      },
+      error: (err) => {
+        console.error('Erreur validation:', err);
+        alert('Impossible de valider le congé : ' + (err.error?.error || 'Erreur serveur'));
+      }
     });
-    /*
-    if (d.typeConge.validationRh && niveauActuel === 1) {
-      d.statut = 'en_attente_rh';
-    } else {
-      d.statut = 'approuve';
-      d.soldeRestant = Math.max(0, d.soldeRestant - d.nbJours);
-    }*/
+
     this.applyFilters();
   }
 
