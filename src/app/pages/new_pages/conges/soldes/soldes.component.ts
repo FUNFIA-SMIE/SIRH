@@ -1,55 +1,72 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ServiceSirhService } from '../../../../services/service-sirh.service';
-
-interface SoldeConge {
-  typeLibelle: string;
-  annee: number;
-  soldeInitial: number;
-  soldeAcquis: number;
-  soldePris: number;
-  soldeEnAttente: number;
-  soldeRestant: number;
+import { FormsModule } from '@angular/forms';
+interface PersonnelSolde {
+  id: number;
+  nom: string;
+  initiales: string;
+  departement: string;
+  soldeCP: number;
+  soldeRTT: number;
 }
 
 @Component({
   selector: 'app-soldes',
-  imports: [CommonModule],
+  imports: [CommonModule,FormsModule],
   templateUrl: './soldes.component.html',
   styleUrl: './soldes.component.css',
 })
 export class SoldesComponent implements OnInit {
-  soldes: SoldeConge[] = [];
-
-  constructor(private sirhService: ServiceSirhService) {}
+personnels: PersonnelSolde[] = [];
+  
+  // État de la modale
+  isModalOpen = false;
+  selectedPersonnel: PersonnelSolde | null = null;
+  
+  // Champs du formulaire
+  typeSelectionne: 'CP' | 'RTT' = 'CP';
+  valeurAjout: number = 0;
+  motif: string = '';
 
   ngOnInit() {
-    this.loadSoldes();
+    this.loadPersonnels();
   }
 
-  loadSoldes() {
-    // TODO: Replace with actual API call
-    // this.sirhService.getSoldesConge().subscribe(data => this.soldes = data);
-    // Mock data for now
-    this.soldes = [
-      {
-        typeLibelle: 'Congé Annuel',
-        annee: 2024,
-        soldeInitial: 25,
-        soldeAcquis: 5,
-        soldePris: 10,
-        soldeEnAttente: 2,
-        soldeRestant: 18
-      },
-      {
-        typeLibelle: 'Congé Maladie',
-        annee: 2024,
-        soldeInitial: 0,
-        soldeAcquis: 0,
-        soldePris: 0,
-        soldeEnAttente: 0,
-        soldeRestant: 0
-      }
+  loadPersonnels() {
+    this.personnels = [
+      { id: 1, nom: 'Alice Marchand', initiales: 'AM', departement: 'Marketing', soldeCP: 18, soldeRTT: 3.5 },
+      { id: 2, nom: 'Lucas Bernard', initiales: 'LB', departement: 'Développement', soldeCP: 12, soldeRTT: 5 },
+      { id: 3, nom: 'Sarah Kone', initiales: 'SK', departement: 'RH', soldeCP: 22, soldeRTT: 2 }
     ];
+  }
+
+  ouvrirModal(personne: PersonnelSolde) {
+    this.selectedPersonnel = personne;
+    this.valeurAjout = 0;
+    this.motif = '';
+    this.isModalOpen = true;
+  }
+
+  fermerModal() {
+    this.isModalOpen = false;
+    this.selectedPersonnel = null;
+  }
+
+  validerAjout() {
+    if (this.selectedPersonnel && this.valeurAjout !== 0) {
+      // Logique métier
+      if (this.typeSelectionne === 'CP') {
+        this.selectedPersonnel.soldeCP += this.valeurAjout;
+      } else {
+        this.selectedPersonnel.soldeRTT += this.valeurAjout;
+      }
+
+      console.log(`Ajout de ${this.valeurAjout}j (${this.typeSelectionne}) à ${this.selectedPersonnel.nom}. Motif: ${this.motif}`);
+      
+      // Ici appel API: this.sirhService.postSolde(...)
+      
+      this.fermerModal();
+    }
   }
 }

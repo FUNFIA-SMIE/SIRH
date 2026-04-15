@@ -1,0 +1,13 @@
+/* Transitions globales dark/light */
+* { transition-property: background-color, border-color, color; transition-duration: 150ms; }
+
+/* Focus ring accessible */
+button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
+  outline: 2px solid #3B82F6;
+  outline-offset: 2px;
+}
+
+/* Overlay modal — évite le scroll derrière */
+:host::ng-deep .modal-backdrop {
+  backdrop-filter: blur(4px);
+}

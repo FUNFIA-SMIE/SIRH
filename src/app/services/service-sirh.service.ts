@@ -160,4 +160,27 @@ export class ServiceSirhService {
     return this.http.delete(`${this.url}/employes/${id}`);
   }
 
+  getSoldes(employeId: any): Observable<any> {
+    return this.http.get(`${this.url}/soldes/${employeId}`);
+  }
+
+  getType_conge_all(employeId: any): Observable<any> {
+    return this.http.get(`${this.url}/soldes/${employeId}`);
+  }
+
+  // Récupérer l'historique
+  getHistorique(employeId: any): Observable<any> {
+    return this.http.get(`${this.url}/historique/${employeId}`);
+  }
+
+  // Créer un congé
+  creerConge(data: any): Observable<any> {
+    return this.http.post(`${this.url}/nouveau`, data);
+  }
+
+  // Liste des types pour le formulaire (CP, CSS, etc.)
+  getTypes(): Observable<any> {
+    return this.http.get(`${this.url}/types`);
+  }
+
 }

@@ -1,0 +1,22 @@
+/* Animation zoom pour la modale */
+@keyframes zoomIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-in.zoom-in {
+  animation: zoomIn 0.15s ease-out forwards;
+}
+
+/* Chrome, Safari, Edge, Opera - Enlever flèches input number */
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
