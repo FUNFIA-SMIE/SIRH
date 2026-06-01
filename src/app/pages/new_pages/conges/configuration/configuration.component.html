@@ -1,135 +1,242 @@
-<div class="p-4 sm:p-8 bg-slate-50 dark:bg-slate-950 min-h-screen transition-colors duration-300">
-  <div class="max-w-6xl mx-auto">
-    
-    <div class="mb-8">
-      <h1 class="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">Configuration</h1>
-      <p class="text-slate-500 dark:text-slate-400 mt-1">Paramétrez les règles métier pour chaque type de congé.</p>
+<!-- type-conge.component.html -->
+<div class="p-6 bg-slate-50 dark:bg-slate-950 min-h-screen">
+
+  <!-- Stats -->
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+    <div class="bg-white dark:bg-slate-900 rounded-lg p-5 shadow-sm border-l-4 border-blue-500">
+      <span class="text-xs uppercase font-semibold tracking-wide text-slate-600 dark:text-slate-400">Total types</span>
+      <span class="text-2xl font-bold text-slate-900 dark:text-white block mt-2">{{ stats.total }}</span>
+    </div>
+    <div class="bg-white dark:bg-slate-900 rounded-lg p-5 shadow-sm border-l-4 border-green-500">
+      <span class="text-xs uppercase font-semibold tracking-wide text-slate-600 dark:text-slate-400">Actifs</span>
+      <span class="text-2xl font-bold text-slate-900 dark:text-white block mt-2">{{ stats.actifs }}</span>
+    </div>
+    <div class="bg-white dark:bg-slate-900 rounded-lg p-5 shadow-sm border-l-4 border-cyan-500">
+      <span class="text-xs uppercase font-semibold tracking-wide text-slate-600 dark:text-slate-400">Validation RH</span>
+      <span class="text-2xl font-bold text-slate-900 dark:text-white block mt-2">{{ stats.avecValidRH }}</span>
+    </div>
+    <div class="bg-white dark:bg-slate-900 rounded-lg p-5 shadow-sm border-l-4 border-amber-500">
+      <span class="text-xs uppercase font-semibold tracking-wide text-slate-600 dark:text-slate-400">Justif. requis</span>
+      <span class="text-2xl font-bold text-slate-900 dark:text-white block mt-2">{{ stats.avecJustif }}</span>
+    </div>
+  </div>
+
+  <!-- Toolbar -->
+  <div class="flex justify-between items-center gap-4 mb-6 flex-wrap">
+    <div class="flex gap-3 flex-1 min-w-fit flex-wrap">
+      <input type="text" class="px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg text-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 flex-1 min-w-[150px]" placeholder="Rechercher..." [(ngModel)]="searchQuery"
+        (ngModelChange)="applyFilters()" />
+      <select class="px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg text-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500" [(ngModel)]="filterType" (ngModelChange)="applyFilters()">
+        <option value="">Tous les types</option>
+        <option *ngFor="let t of typeEnumOptions" [value]="t.value">{{ t.label }}</option>
+      </select>
+      <select class="px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg text-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500" [(ngModel)]="filterActif" (ngModelChange)="applyFilters()">
+        <option value="">Tous statuts</option>
+        <option value="true">Actif</option>
+        <option value="false">Inactif</option>
+      </select>
+    </div>
+    <button class="px-4 py-2 border border-blue-600 rounded-lg bg-blue-600 text-white font-medium text-sm cursor-pointer transition-all flex items-center gap-2 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed" (click)="openModal()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <line x1="12" y1="5" x2="12" y2="19" />
+        <line x1="5" y1="12" x2="19" y2="12" />
+      </svg>
+      Nouveau type
+    </button>
+  </div>
+
+  <!-- Table -->
+  <div class="bg-white dark:bg-slate-900 rounded-lg shadow-sm overflow-hidden border border-slate-200 dark:border-slate-700">
+    <div class="overflow-x-auto">
+      <table class="w-full border-collapse text-sm">
+        <thead class="bg-slate-100 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700">
+          <tr>
+            <th class="px-4 py-3 text-left font-semibold text-slate-600 dark:text-slate-400 text-xs uppercase tracking-wider">Code</th>
+            <th class="px-4 py-3 text-left font-semibold text-slate-600 dark:text-slate-400 text-xs uppercase tracking-wider">Libellé</th>
+            <th class="px-4 py-3 text-left font-semibold text-slate-600 dark:text-slate-400 text-xs uppercase tracking-wider">Type</th>
+            <th class="px-4 py-3 text-center font-semibold text-slate-600 dark:text-slate-400 text-xs uppercase tracking-wider">Solde (j)</th>
+            <th class="px-4 py-3 text-center font-semibold text-slate-600 dark:text-slate-400 text-xs uppercase tracking-wider">Délai (h)</th>
+            <th class="px-4 py-3 text-center font-semibold text-slate-600 dark:text-slate-400 text-xs uppercase tracking-wider">Valid. RH</th>
+            <th class="px-4 py-3 text-center font-semibold text-slate-600 dark:text-slate-400 text-xs uppercase tracking-wider">Justif.</th>
+            <th class="px-4 py-3 text-center font-semibold text-slate-600 dark:text-slate-400 text-xs uppercase tracking-wider">Statut</th>
+            <th class="px-4 py-3 text-right font-semibold text-slate-600 dark:text-slate-400 text-xs uppercase tracking-wider">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
+          <tr *ngFor="let r of pagedData" class="hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+            <td class="px-4 py-3 font-mono text-sm text-indigo-600 dark:text-indigo-400">{{ r.code }}</td>
+            <td class="px-4 py-3 text-slate-900 dark:text-slate-100">{{ r.libelle }}</td>
+            <td class="px-4 py-3"><span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-cyan-100 dark:bg-cyan-900/30 text-cyan-700 dark:text-cyan-300">{{ getTypeLabel(r.type_enum) }}</span></td>
+            <td class="px-4 py-3 text-center font-semibold text-slate-900 dark:text-white">{{ r.solde_initial_jours }}</td>
+            <td class="px-4 py-3 text-center text-slate-600 dark:text-slate-400 text-sm">{{ r.delai_reponse_h }}h</td>
+            <td class="px-4 py-3 text-center">
+              <span *ngIf="r.validation_rh"
+                class="text-green-600 dark:text-green-300 bg-green-50 dark:bg-green-900/30 px-2 py-1 rounded-full text-xs font-medium">
+                Oui
+              </span>
+              <span *ngIf="!r.validation_rh" class="text-slate-400 dark:text-slate-600 bg-slate-50 dark:bg-slate-800 px-2 py-1 rounded-full text-xs">
+                Non
+              </span>
+            </td>
+
+            <td class="px-4 py-3 text-center">
+              <span *ngIf="r.justificatif_requis"
+                class="text-amber-600 dark:text-amber-300 bg-amber-50 dark:bg-amber-900/30 px-2 py-1 rounded-full text-xs font-medium">
+                Requis
+              </span>
+              <span *ngIf="!r.justificatif_requis" class="text-slate-400 dark:text-slate-600 bg-slate-50 dark:bg-slate-800 px-2 py-1 rounded-full text-xs">
+                Optionnel
+              </span>
+            </td>
+            <td class="px-4 py-3 text-center">
+              <span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium" [ngClass]="r.actif ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300' : 'bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white'">
+                {{ r.actif ? 'Actif' : 'Inactif' }}
+              </span>
+            </td>
+            <td class="px-4 py-3 text-right flex gap-2 justify-end">
+              <button class="px-3 py-1 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-medium text-xs cursor-pointer transition-all hover:bg-slate-100 dark:hover:bg-slate-700" (click)="openModal(r)" title="Modifier">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" />
+                  <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
+                </svg>
+              </button>
+              <button class="px-3 py-1 border border-red-200 dark:border-red-800 rounded-lg text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950 font-medium text-xs cursor-pointer transition-all hover:bg-red-100 dark:hover:bg-red-900" (click)="openConfirm(r)" title="Supprimer">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="3 6 5 6 21 6" />
+                  <path d="M19 6l-1 14H6L5 6" />
+                </svg>
+              </button>
+            </td>
+          </tr>
+          <tr *ngIf="pagedData.length === 0">
+            <td colspan="9" class="text-center text-slate-500 dark:text-slate-400 italic py-8">Aucun type de congé trouvé</td>
+          </tr>
+        </tbody>
+      </table>
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-      
-      <div class="lg:col-span-1">
-        <div class="bg-white dark:bg-slate-900 shadow-xl rounded-2xl border border-slate-200 dark:border-slate-800 p-6 sticky top-8">
-          <div class="flex items-center gap-3 mb-6">
-            <div class="p-2 bg-blue-600 rounded-lg text-white">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
-              </svg>
-            </div>
-            <h2 class="text-xl font-bold text-slate-800 dark:text-white">
-              {{ isEditing ? 'Éditer' : 'Nouveau' }} type
-            </h2>
-          </div>
+    <!-- Pagination -->
+    <div class="pagination">
+      <span>{{ filteredData.length }} résultat(s) — page {{ currentPage }}/{{ totalPages }}</span>
+      <div class="pagination-btns">
+        <button class="btn btn-sm" [disabled]="currentPage <= 1" (click)="goPage(currentPage - 1)">‹</button>
+        <button class="btn btn-sm" [disabled]="currentPage >= totalPages" (click)="goPage(currentPage + 1)">›</button>
+      </div>
+    </div>
+  </div>
 
-          <form (ngSubmit)="saveTypeConge()" #typeCongeForm="ngForm" class="space-y-4">
-            <div>
-              <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Identification</label>
-              <div class="grid grid-cols-2 gap-2">
-                <input type="text" name="code" [(ngModel)]="currentType.code" required placeholder="Code (CP)"
-                       class="w-full bg-slate-50 dark:bg-slate-800 border-none rounded-xl text-sm focus:ring-2 focus:ring-blue-500 dark:text-white">
-                <select name="typeEnum" [(ngModel)]="currentType.typeEnum" required
-                        class="w-full bg-slate-50 dark:bg-slate-800 border-none rounded-xl text-sm focus:ring-2 focus:ring-blue-500 dark:text-white">
-                  <option value="annuel">Annuel</option>
-                  <option value="maladie">Maladie</option>
-                  <option value="maternite">Maternité</option>
-                  <option value="autre">Autre</option>
-                </select>
-              </div>
-              <input type="text" name="libelle" [(ngModel)]="currentType.libelle" required placeholder="Libellé complet"
-                     class="w-full mt-2 bg-slate-50 dark:bg-slate-800 border-none rounded-xl text-sm focus:ring-2 focus:ring-blue-500 dark:text-white">
-            </div>
+</div>
 
-            <div class="pt-4 border-t border-slate-100 dark:border-slate-800">
-              <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">Paramètres de calcul</label>
-              <div class="space-y-3">
-                <div class="flex items-center justify-between">
-                  <span class="text-sm text-slate-600 dark:text-slate-400">Solde Initial</span>
-                  <input type="number" name="soldeInitialJours" [(ngModel)]="currentType.soldeInitialJours" 
-                         class="w-20 bg-slate-100 dark:bg-slate-800 border-none rounded-lg text-right text-sm font-bold dark:text-white">
-                </div>
-                <div class="flex items-center justify-between">
-                  <span class="text-sm text-slate-600 dark:text-slate-400">Délai Réponse (h)</span>
-                  <input type="number" name="delaiReponseH" [(ngModel)]="currentType.delaiReponseH" 
-                         class="w-20 bg-slate-100 dark:bg-slate-800 border-none rounded-lg text-right text-sm font-bold dark:text-white">
-                </div>
-                <div class="flex items-center justify-between">
-                  <span class="text-sm text-slate-600 dark:text-slate-400">Anticipation (j)</span>
-                  <input type="number" name="anticipationMinJ" [(ngModel)]="currentType.anticipationMinJ" 
-                         class="w-20 bg-slate-100 dark:bg-slate-800 border-none rounded-lg text-right text-sm font-bold dark:text-white">
-                </div>
-              </div>
-            </div>
+<!-- ===== MODAL FORM ===== -->
+<div class="overlay" *ngIf="showModal" (click)="closeModal()">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>{{ editId ? 'Modifier le type de congé' : 'Nouveau type de congé' }}</h3>
+      <button class="btn btn-sm" (click)="closeModal()">✕</button>
+    </div>
 
-            <div class="flex flex-col gap-2 pt-6">
-              <button type="submit" [disabled]="!typeCongeForm.valid"
-                      class="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 dark:disabled:bg-slate-800 text-white font-bold py-3 rounded-xl transition-all shadow-lg shadow-blue-500/20">
-                {{ isEditing ? 'Mettre à jour' : 'Enregistrer' }}
-              </button>
-              <button type="button" (click)="cancelEdit()" *ngIf="isEditing"
-                      class="w-full bg-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 text-sm font-semibold py-2">
-                Annuler les modifications
-              </button>
-            </div>
-          </form>
+    <form [formGroup]="form" class="modal-body">
+
+      <div class="form-row-2">
+        <div class="form-group">
+          <label>Code <span class="required">*</span></label>
+          <input type="text" class="form-input" formControlName="code" placeholder="EX: CONG_ANN" maxlength="30"
+            [class.error]="f['code'].invalid && f['code'].touched" />
+          <span class="error-msg" *ngIf="f['code'].invalid && f['code'].touched">Champ obligatoire</span>
+        </div>
+        <div class="form-group">
+          <label>Type <span class="required">*</span></label>
+          <select class="form-input" formControlName="type_enum">
+            <option *ngFor="let t of typeEnumOptions" [value]="t.value">{{ t.label }}</option>
+          </select>
         </div>
       </div>
 
-      <div class="lg:col-span-2 space-y-4">
-        <div class="bg-white dark:bg-slate-900 shadow-xl rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden">
-          <table class="w-full">
-            <thead class="bg-slate-50 dark:bg-slate-800/50">
-              <tr>
-                <th class="px-6 py-4 text-left text-xs font-bold text-slate-400 uppercase">Code & Libellé</th>
-                <th class="px-6 py-4 text-center text-xs font-bold text-slate-400 uppercase">Paramètres</th>
-                <th class="px-6 py-4 text-center text-xs font-bold text-slate-400 uppercase">Statut</th>
-                <th class="px-6 py-4 text-right text-xs font-bold text-slate-400 uppercase">Actions</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
-              <tr *ngFor="let type of typesConge" class="group hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
-                <td class="px-6 py-4">
-                  <div class="flex items-center gap-3">
-                    <div class="h-10 w-10 rounded-xl bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center text-blue-600 dark:text-blue-400 font-black text-xs">
-                      {{ type.code }}
-                    </div>
-                    <div>
-                      <div class="text-sm font-bold text-slate-900 dark:text-white">{{ type.libelle }}</div>
-                      <div class="text-[10px] font-bold uppercase text-slate-400">{{ type.typeEnum }}</div>
-                    </div>
-                  </div>
-                </td>
-                <td class="px-6 py-4 text-center">
-                  <div class="flex flex-col gap-1">
-                    <span class="text-xs text-slate-600 dark:text-slate-400 font-medium">Initial: <b class="text-slate-900 dark:text-white">{{ type.soldeInitialJours }}j</b></span>
-                    <span class="text-[10px] text-slate-400">Anticipation: {{ type.anticipationMinJ }}j</span>
-                  </div>
-                </td>
-                <td class="px-6 py-4 text-center">
-                  <span [ngClass]="type.actif ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-slate-100 text-slate-600'" 
-                        class="px-2 py-1 rounded-lg text-[10px] font-bold uppercase">
-                    {{ type.actif ? 'Actif' : 'Inactif' }}
-                  </span>
-                </td>
-                <td class="px-6 py-4 text-right">
-                  <div class="flex justify-end gap-1">
-                    <button (click)="editType(type)" 
-                            class="p-2 text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-all">
-                      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                      </svg>
-                    </button>
-                    <button class="p-2 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-lg transition-all">
-                      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                      </svg>
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+      <div class="form-group">
+        <label>Libellé <span class="required">*</span></label>
+        <input type="text" class="form-input" formControlName="libelle" placeholder="Congé annuel payé" maxlength="100"
+          [class.error]="f['libelle'].invalid && f['libelle'].touched" />
+        <span class="error-msg" *ngIf="f['libelle'].invalid && f['libelle'].touched">Champ obligatoire</span>
+      </div>
+
+      <div class="form-row-3">
+        <div class="form-group">
+          <label>Solde initial (j)</label>
+          <input type="number" class="form-input" formControlName="solde_initial_jours" min="0" />
+        </div>
+        <div class="form-group">
+          <label>Délai réponse (h)</label>
+          <input type="number" class="form-input" formControlName="delai_reponse_h" min="0" />
+        </div>
+        <div class="form-group">
+          <label>Anticipation min (j)</label>
+          <input type="number" class="form-input" formControlName="anticipation_min_j" min="0" />
         </div>
       </div>
+
+      <!-- Toggles -->
+      <div class="toggles-grid">
+        <p class="toggles-title">Paramètres</p>
+        <div class="toggle-row">
+          <span>Validation RH</span>
+          <label class="toggle">
+            <input type="checkbox" formControlName="validation_rh" />
+            <span class="track"><span class="thumb"></span></span>
+          </label>
+        </div>
+        <div class="toggle-row">
+          <span>Justificatif requis</span>
+          <label class="toggle">
+            <input type="checkbox" formControlName="justificatif_requis" />
+            <span class="track"><span class="thumb"></span></span>
+          </label>
+        </div>
+        <div class="toggle-row">
+          <span>Déductible du solde</span>
+          <label class="toggle">
+            <input type="checkbox" formControlName="deductible_solde" />
+            <span class="track"><span class="thumb"></span></span>
+          </label>
+        </div>
+        <div class="toggle-row">
+          <span>Actif</span>
+          <label class="toggle">
+            <input type="checkbox" formControlName="actif" />
+            <span class="track"><span class="thumb"></span></span>
+          </label>
+        </div>
+      </div>
+
+      <div class="form-group" *ngIf="form.get('validation_rh')?.value">
+        <label>Seuil RH (jours)</label>
+        <input type="number" class="form-input" formControlName="seuil_rh_jours" min="0" placeholder="ex: 5" />
+      </div>
+
+    </form>
+
+    <div class="modal-footer">
+      <button class="btn" (click)="closeModal()">Annuler</button>
+      <button class="btn btn-primary" (click)="saveRecord()" [disabled]="form.invalid">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== CONFIRM DELETE ===== -->
+<div class="overlay" *ngIf="showConfirm" (click)="closeConfirm()">
+  <div class="modal modal-sm" (click)="$event.stopPropagation()">
+    <div class="modal-body">
+      <div class="danger-icon">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="3 6 5 6 21 6" />
+          <path d="M19 6l-1 14H6L5 6" />
+        </svg>
+      </div>
+      <p class="confirm-title">Supprimer ce type de congé ?</p>
+      <p class="confirm-msg">{{ confirmMsg }}</p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" (click)="closeConfirm()">Annuler</button>
+      <button class="btn btn-danger" (click)="confirmDelete()">Supprimer</button>
     </div>
   </div>
 </div>

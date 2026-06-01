@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ServiceSirhService } from '../../../../services/service-sirh.service';
@@ -25,7 +25,7 @@ export interface WorkflowEtape {
 }
 
 export interface DemandeConge {
-  id: string;
+  id: string; 
   employe: { id: string; nom: string; poste: string; matricule: string };
   typeConge: TypeConge;
   dateDebut: Date;
@@ -105,6 +105,13 @@ export class DemandeEnAttenteComponent implements OnInit {
   ];
 
   congeForm!: FormGroup;
+  // DISPONIBILITÉ state
+  dispoStarted = false;
+  dispoFinEnabled = false;
+  private dispoTimer: any = null;
+  private dispoStartAt: number | null = null;
+  dispoRemainingSeconds = 0;
+  private dispoInterval: any = null;
 
   constructor(
     private service: ServiceSirhService,
@@ -118,6 +125,8 @@ export class DemandeEnAttenteComponent implements OnInit {
       type_conge_id: ['', Validators.required],
       date_debut: ['', Validators.required],
       date_fin: ['', Validators.required],
+      heure_debut: [''],
+      heure_fin: [''],
       demi_journee_debut: [false],
       demi_journee_fin: [false],
       motif: [''],
@@ -149,7 +158,8 @@ export class DemandeEnAttenteComponent implements OnInit {
           nom: d.nom,
           prenom: d.prenom,
           matricule: d.matricule,
-          poste: d.poste || 'Collaborateur'
+          poste: d.poste || 'Collaborateur',
+          photo_url: d.photo_url || null,
         },
         // On crée l'objet 'typeConge' attendu par d.typeConge.libelle
         typeConge: {
@@ -334,6 +344,8 @@ export class DemandeEnAttenteComponent implements OnInit {
       type_conge_id: '',
       date_debut: '',
       date_fin: '',
+      heure_debut: '',
+      heure_fin: '',
       demi_journee_debut: false,
       demi_journee_fin: false,
       motif: '',
@@ -356,6 +368,120 @@ export class DemandeEnAttenteComponent implements OnInit {
     // Réinitialise le type de congé quand on change d'employé
     this.congeForm.patchValue({ type_conge_id: '' });
   }
+
+  isDispoType(): boolean {
+    return this.getTypeSelectionne()?.code === 'DISPO';
+  }
+
+  onTypeChange(): void {
+    const currentType = this.getTypeSelectionne();
+    if (!currentType) return;
+
+    if (currentType.code === 'DISPO') {
+      // reset dates/times — we'll record start/finish when user clicks
+      this.congeForm.patchValue({
+        date_debut: '',
+        date_fin: '',
+        heure_debut: '',
+        heure_fin: '',
+        demi_journee_debut: false,
+        demi_journee_fin: false
+      });
+      // reset DISPONIBILITÉ state
+      this.clearDispoTimer();
+      this.dispoStarted = false;
+      this.dispoFinEnabled = false;
+      // rendre le motif obligatoire pour DISPO
+      const motifControl = this.congeForm.get('motif');
+      motifControl?.setValidators([Validators.required]);
+      motifControl?.updateValueAndValidity();
+    } else {
+      this.congeForm.patchValue({
+        heure_debut: '',
+        heure_fin: ''
+      });
+      // enlever l'obligation du motif
+      const motifControl = this.congeForm.get('motif');
+      motifControl?.clearValidators();
+      motifControl?.updateValueAndValidity();
+    }
+  }
+
+  startDispo(): void {
+    // record start now
+    const now = new Date();
+    const dateStr = now.toISOString().slice(0, 10);
+    const hh = String(now.getHours()).padStart(2, '0');
+    const mm = String(now.getMinutes()).padStart(2, '0');
+    const ss = String(now.getSeconds()).padStart(2, '0');
+    const timeStr = `${hh}:${mm}:${ss}`;
+    this.congeForm.patchValue({ date_debut: dateStr, heure_debut: timeStr });
+    this.dispoStarted = true;
+    this.dispoFinEnabled = false;
+    this.dispoStartAt = Date.now();
+    // enable FIN after 5 seconds
+    this.clearDispoTimer();
+    const enableAt = Date.now() + 5000;
+    this.dispoRemainingSeconds = Math.ceil((enableAt - Date.now()) / 1000);
+    this.dispoTimer = setTimeout(() => {
+      this.dispoFinEnabled = true;
+      this.dispoTimer = null;
+      if (this.dispoInterval) { clearInterval(this.dispoInterval); this.dispoInterval = null; }
+      this.dispoRemainingSeconds = 0;
+    }, 5000);
+    // live countdown every 250ms
+    this.dispoInterval = setInterval(() => {
+      const rem = Math.ceil((enableAt - Date.now()) / 1000);
+      this.dispoRemainingSeconds = rem > 0 ? rem : 0;
+      if (rem <= 0) { clearInterval(this.dispoInterval); this.dispoInterval = null; }
+    }, 250);
+  }
+
+  confirmDispoFin(): void {
+    if (!this.dispoStarted) return;
+    if (!this.dispoFinEnabled) return;
+    const now = new Date();
+    const dateStr = now.toISOString().slice(0, 10);
+    const hh = String(now.getHours()).padStart(2, '0');
+    const mm = String(now.getMinutes()).padStart(2, '0');
+    const ss = String(now.getSeconds()).padStart(2, '0');
+    const timeStr = `${hh}:${mm}:${ss}`;
+    this.congeForm.patchValue({ date_fin: dateStr, heure_fin: timeStr });
+    // At this point formatCalculatedTotal() will reflect the total
+    this.clearDispoTimer();
+    this.dispoFinEnabled = false;
+    this.dispoStarted = false;
+  }
+
+  clearDispoTimer(): void {
+    if (this.dispoTimer) { clearTimeout(this.dispoTimer); this.dispoTimer = null; }
+    if (this.dispoInterval) { clearInterval(this.dispoInterval); this.dispoInterval = null; this.dispoRemainingSeconds = 0; }
+  }
+
+  ngOnDestroy(): void {
+    this.clearDispoTimer();
+  }
+
+  formatCalculatedTotal(): string {
+    const values = this.congeForm.value;
+    if (this.isDispoType()) {
+      if (!values.heure_debut || !values.heure_fin) return '0h 0m 0s';
+      const [h1, m1, s1] = values.heure_debut.split(':').map((n: string) => Number(n));
+      const [h2, m2, s2] = values.heure_fin.split(':').map((n: string) => Number(n));
+      const debutSeconds = h1 * 3600 + m1 * 60 + (s1 || 0);
+      const finSeconds = h2 * 3600 + m2 * 60 + (s2 || 0);
+      let diffSeconds = finSeconds - debutSeconds;
+      if (diffSeconds < 0) diffSeconds = 0;
+      const hours = Math.floor(diffSeconds / 3600);
+      const minutes = Math.floor((diffSeconds % 3600) / 60);
+      const seconds = diffSeconds % 60;
+      return `${hours}h ${minutes}m ${seconds}s`;
+    }
+
+    const days = this.calculerJours();
+    return `${days} j`;
+  }
+
   soldesEmploye: SoldeConge[] = [];
   loadingSoldes = false;
 
@@ -376,8 +502,27 @@ export class DemandeEnAttenteComponent implements OnInit {
 
   }
 
+  getTypeSelectionne(): any {
+    const typeId = this.congeForm.get('type_conge_id')?.value;
+    return this.typesConge?.find((t: any) => t.id === typeId);
+  }
+
+  getSoldeUnite(): string {
+    return this.getTypeSelectionne()?.code === 'DISPO' ? 'H' : 'j';
+  }
+
   calculerJours(): number {
     const values = this.congeForm.value;
+    if (this.isDispoType()) {
+      if (!values.heure_debut || !values.heure_fin) return 0;
+      const [h1, m1, s1] = values.heure_debut.split(':').map((n: string) => Number(n));
+      const [h2, m2, s2] = values.heure_fin.split(':').map((n: string) => Number(n));
+      const debutSeconds = (h1 || 0) * 3600 + (m1 || 0) * 60 + (s1 || 0);
+      const finSeconds = (h2 || 0) * 3600 + (m2 || 0) * 60 + (s2 || 0);
+      const diffSeconds = finSeconds - debutSeconds;
+      return diffSeconds > 0 ? diffSeconds / 3600 : 0; // return hours as decimal
+    }
+
     if (!values.date_debut || !values.date_fin) return 0;
 
     const debut = new Date(values.date_debut);
@@ -484,6 +629,8 @@ export class DemandeEnAttenteComponent implements OnInit {
       type_conge_id: typeId,
       date_debut: v.date_debut,
       date_fin: v.date_fin,
+      heure_debut: v.heure_debut || null,
+      heure_fin: v.heure_fin || null,
       nb_jours: this.calculerJours(),
       motif: v.motif || null,
       demi_journee_debut: v.demi_journee_debut || false,

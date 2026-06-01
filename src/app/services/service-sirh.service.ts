@@ -117,7 +117,7 @@ export class ServiceSirhService {
   }
 
   getTypesConge(): Observable<any[]> {
-    return this.http.get<any[]>(`${this.url}/types-conge`);
+    return this.http.get<any[]>(`${this.url}/conges/type_conge`);
   }
 
   createTypeConge(type: any): Observable<any> {
@@ -191,7 +191,33 @@ export class ServiceSirhService {
     return this.http.patch(`${this.url}/conges/refuser/${data.id}`, data);
   }
 
-  solde_conges_employe():Observable<any> {
+  solde_conges_employe(): Observable<any> {
     return this.http.get(`${this.url}/conges/employe_solde`);
   }
+
+  creerCompteUtilisateur(data: any): Observable<any> {
+    return this.http.post(`${this.url}/employes/creation_compte_SIRH`, data);
+  }
+
+  recupererCompteUtilisateur(id: any): Observable<any> {
+    return this.http.get(`${this.url}/employes/employes_utilisateurs/${id}`);
+  }
+
+  Nouveau_solde_conge(data: any): Observable<any> {
+    return this.http.post(`${this.url}/solde-conge`, data);
+  }
+
+  Recuperer_solde_conge(id: any): Observable<any> {
+    return this.http.get(`${this.url}/solde-conge/${id}`);
+  }
+
+  Recuperer_solde_conge_liste(id: any): Observable<any> {
+    return this.http.get(`${this.url}/solde-conge`);
+  }
+
+  Ajustement_solde_conge(data: any): Observable<any> {
+    return this.http.post(`${this.url}/conges/ajustement`, data);
+  }
+
+
 }

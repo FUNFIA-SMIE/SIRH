@@ -111,10 +111,16 @@
         <div class="flex items-start justify-between mb-4">
           <div class="flex items-center gap-3">
             <!-- Avatar initiales -->
-            <div
-              class="w-10 h-10 rounded-xl flex items-center justify-center text-sm font-semibold flex-shrink-0 border"
-              [ngStyle]="avatarStyle(i)">
-              {{ initiales(d.employe.nom) }}
+            <div class="w-10 h-10 rounded-xl flex-shrink-0 border overflow-hidden flex items-center justify-center">
+
+              <img *ngIf="d.employe.photo_url" [src]="d.employe.photo_url" [alt]="d.employe.nom"
+                class="w-full h-full object-cover">
+
+              <div *ngIf="!d.employe.photo_url"
+                class="w-full h-full flex items-center justify-center text-sm font-semibold" [ngStyle]="avatarStyle(i)">
+                {{ initiales(d.employe.nom) }}{{ d.employe.prenom.charAt(0) }}
+              </div>
+
             </div>
             <div>
               <p class="text-sm font-semibold text-gray-900 dark:text-slate-100 mb-0.5">{{ d.employe.nom }}</p>
@@ -352,18 +358,18 @@
         <div class="col-span-2">
           <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Type de congé</label>
           <div class="flex gap-2">
-            <select (change)="getSoldeAffiche()" formControlName="type_conge_id"
+            <select (change)="onTypeChange(); getSoldeAffiche()" formControlName="type_conge_id"
               class="flex-1 bg-gray-50 dark:bg-[#1C2333] border border-gray-200 dark:border-[#21293D] rounded-xl p-3 text-sm text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500">
               <option *ngFor="let t of typesConge" [value]="t.id">{{ t.libelle }}</option>
             </select>
             <div *ngIf="selectedEmploye"
               class="px-4 py-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl text-amber-700 dark:text-amber-400 text-sm font-bold">
-              Solde: {{ solde_par_employe }}j
+              Solde: {{ solde_par_employe }}{{ getSoldeUnite() }}
             </div>
           </div>
         </div>
 
-        <div class="md:col-span-1">
+        <div class="md:col-span-1" *ngIf="!isDispoType()">
           <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Date de début</label>
           <input type="date" formControlName="date_debut" (change)="calculerJours()"
             class="w-full bg-gray-50 dark:bg-[#1C2333] border border-gray-200 dark:border-[#21293D] rounded-xl p-3 text-sm text-gray-900 dark:text-white outline-none focus:border-blue-500">
@@ -374,7 +380,34 @@
           </label>
         </div>
 
-        <div class="md:col-span-1">
+        <div class="md:col-span-1" *ngIf="isDispoType()">
+          <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Disponibilité (DISPO)</label>
+          <div class="space-y-2">
+            <div class="flex items-center justify-between">
+              <div>
+                <div class="text-xs text-gray-500">Début</div>
+                <div class="text-sm font-medium">{{ congeForm.value.heure_debut || '—' }} {{ congeForm.value.date_debut || '' }}</div>
+              </div>
+              <div>
+                <div class="text-xs text-gray-500">Fin</div>
+                <div class="text-sm font-medium">{{ congeForm.value.heure_fin || '—' }} {{ congeForm.value.date_fin || '' }}</div>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-2">
+              <button type="button" (click)="dispoStarted ? confirmDispoFin() : startDispo()"
+                [disabled]="dispoStarted && !dispoFinEnabled"
+                class="px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                [ngClass]="dispoStarted ? (dispoFinEnabled ? 'bg-red-600 text-white' : 'bg-gray-200 text-gray-400') : 'bg-green-600 text-white'">
+                {{ dispoStarted ? 'FIN' : 'DÉBUT' }}
+              </button>
+              <div *ngIf="dispoStarted && !dispoFinEnabled" class="text-xs text-gray-500">Activation dans {{ dispoRemainingSeconds }}s...</div>
+              <div *ngIf="congeForm.value.heure_fin" class="ml-auto text-sm text-blue-600 font-medium">Total: {{ formatCalculatedTotal() }}</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="md:col-span-1" *ngIf="!isDispoType()">
           <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Date de fin</label>
           <input type="date" formControlName="date_fin" (change)="calculerJours()"
             class="w-full bg-gray-50 dark:bg-[#1C2333] border border-gray-200 dark:border-[#21293D] rounded-xl p-3 text-sm text-gray-900 dark:text-white outline-none focus:border-blue-500">
@@ -423,7 +456,7 @@
       <div class="flex items-center justify-between mt-8 pt-6 border-t border-gray-100 dark:border-[#21293D]">
         <div class="text-sm">
           <span class="text-gray-400">Total calculé :</span>
-          <span class="ml-2 font-bold text-blue-600 dark:text-blue-400 text-lg">{{ calculerJours() }} jours</span>
+          <span class="ml-2 font-bold text-blue-600 dark:text-blue-400 text-lg">{{ formatCalculatedTotal() }}</span>
         </div>
         <div class="flex gap-3">
           <button type="button" (click)="closeCreationModal()"
@@ -440,15 +473,20 @@
   </div>
 </div>
 
-<div *ngIf="notification" 
-     class="fixed top-5 right-5 z-[100] flex items-center p-4 mb-4 w-full max-w-xs rounded-2xl shadow-2xl border animate-in slide-in-from-right duration-300"
-     [ngClass]="notification.type === 'success' ? 'bg-emerald-50 border-emerald-200 dark:bg-emerald-900/20 dark:border-emerald-800' : 'bg-red-50 border-red-200 dark:bg-red-900/20 dark:border-red-800'">
-    
-    <div class="inline-flex items-center justify-center flex-shrink-0 w-8 h-8 rounded-lg"
-         [ngClass]="notification.type === 'success' ? 'text-emerald-500 bg-emerald-100 dark:bg-emerald-800 dark:text-emerald-200' : 'text-red-500 bg-red-100 dark:bg-red-800 dark:text-red-200'">
-        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>
-    </div>
-    <div class="ml-3 text-sm font-bold" [ngClass]="notification.type === 'success' ? 'text-emerald-800 dark:text-emerald-400' : 'text-red-800 dark:text-red-400'">
-        {{ notification.message }}
-    </div>
+<div *ngIf="notification"
+  class="fixed top-5 right-5 z-[100] flex items-center p-4 mb-4 w-full max-w-xs rounded-2xl shadow-2xl border animate-in slide-in-from-right duration-300"
+  [ngClass]="notification.type === 'success' ? 'bg-emerald-50 border-emerald-200 dark:bg-emerald-900/20 dark:border-emerald-800' : 'bg-red-50 border-red-200 dark:bg-red-900/20 dark:border-red-800'">
+
+  <div class="inline-flex items-center justify-center flex-shrink-0 w-8 h-8 rounded-lg"
+    [ngClass]="notification.type === 'success' ? 'text-emerald-500 bg-emerald-100 dark:bg-emerald-800 dark:text-emerald-200' : 'text-red-500 bg-red-100 dark:bg-red-800 dark:text-red-200'">
+    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+      <path fill-rule="evenodd"
+        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+        clip-rule="evenodd"></path>
+    </svg>
+  </div>
+  <div class="ml-3 text-sm font-bold"
+    [ngClass]="notification.type === 'success' ? 'text-emerald-800 dark:text-emerald-400' : 'text-red-800 dark:text-red-400'">
+    {{ notification.message }}
+  </div>
 </div>

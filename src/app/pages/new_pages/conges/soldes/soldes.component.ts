@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ServiceSirhService } from '../../../../services/service-sirh.service';
 import { FormsModule } from '@angular/forms';
+import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
 
 interface PersonnelSolde {
   id: number;
@@ -14,67 +15,144 @@ interface PersonnelSolde {
 
 @Component({
   selector: 'app-soldes',
-  imports: [CommonModule,FormsModule],
+  imports: [CommonModule, FormsModule],
   templateUrl: './soldes.component.html',
   styleUrl: './soldes.component.css',
 })
 export class SoldesComponent implements OnInit {
-personnels: any;
-  
-  // État de la modale
+
+  personnels: any[] = [];
+  searchQuery = '';
   isModalOpen = false;
-  selectedPersonnel: PersonnelSolde | null = null;
+  showHistorique = false;
+  selectedPersonnel: any = null;
+  typeSelectionne: any = null;
+  valeurAjout = 0;
+  motif = '';
+  soldeActuel = 0;
+  soldePreview = 0;
+  histFilter = 'tous';
   
-  // Champs du formulaire
-  typeSelectionne: 'CP' | 'RTT' = 'CP';
-  valeurAjout: number = 0;
-  motif: string = '';
 
-  constructor(private sirhService: ServiceSirhService) {} 
+  filtresHistorique = [
+    { label: 'Tous', value: 'tous' },
+    { label: 'Congés payés', value: 'CP' },
+    { label: 'RTT', value: 'RTT' },
+    { label: 'Maladie', value: 'MAL' },
+  ];
+  type_conge_data: any[] | undefined;
 
-  ngOnInit() {
+  ngOnInit(): void {
     this.loadPersonnels();
   }
+  trackByPersonnel(index: number, personnel: any): string {
+    return personnel.id; // Ou personnel.matricule
+  }
 
-  async loadPersonnels() {
-
+  constructor(private sirhService: ServiceSirhService, private sanitizer: DomSanitizer) { }
+  async loadPersonnels(): Promise<void> {
     this.personnels = await this.sirhService.solde_conges_employe().toPromise();
+    this.type_conge_data = await this.sirhService.getTypesConge().toPromise();
     console.log('Personnels chargés :', this.personnels);
-/*
-    this.personnels = [
-      { id: 1, nom: 'Alice Marchand', initiales: 'AM', departement: 'Marketing', soldeCP: 18, soldeRTT: 3.5 },
-      { id: 2, nom: 'Lucas Bernard', initiales: 'LB', departement: 'Développement', soldeCP: 12, soldeRTT: 5 },
-      { id: 3, nom: 'Sarah Kone', initiales: 'SK', departement: 'RH', soldeCP: 22, soldeRTT: 2 }
-    ];
-    */
   }
 
-  ouvrirModal(personne: PersonnelSolde) {
-    this.selectedPersonnel = personne;
-    this.valeurAjout = 0;
-    this.motif = '';
-    this.isModalOpen = true;
+  // Données d'exemple — remplacez par votre API
+  absencesData: Record<number, any[]> = {
+    1: [
+      { type: 'CP', label: 'Congés payés', debut: '2025-07-14', fin: '2025-07-25', jours: 9, statut: 'approved' },
+      { type: 'MAL', label: 'Maladie', debut: '2025-03-10', fin: '2025-03-12', jours: 3, statut: 'approved' },
+    ],
+  };
+
+  get totalCP(): number {
+    return this.personnels.reduce((s, p) => s + (p.soldes?.[0]?.solde_restant || 0), 0);
   }
 
-  fermerModal() {
+  get personnelsFiltres(): any[] {
+    if (!this.searchQuery) return this.personnels;
+    const q = this.searchQuery.toLowerCase();
+    return this.personnels.filter(p =>
+      p.nom?.toLowerCase().includes(q) || p.prenom?.toLowerCase().includes(q)
+    );
+  }
+
+  get absencesFiltrees(): any[] {
+    const list = this.absencesData[this.selectedPersonnel?.id] || [];
+    return this.histFilter === 'tous' ? list : list.filter(a => a.type === this.histFilter);
+  }
+
+  getPillClass(v: number): string {
+    if (v >= 15) return 'bg-green-50 text-green-800 dark:bg-green-900/20 dark:text-green-300';
+    if (v >= 8) return 'bg-amber-50 text-amber-800 dark:bg-amber-900/20 dark:text-amber-300';
+    return 'bg-red-50 text-red-800 dark:bg-red-900/20 dark:text-red-300';
+  }
+
+  ouvrirHistorique(p: any): void {
+    this.selectedPersonnel = p;
+    this.showHistorique = true;
+    this.histFilter = 'tous';
     this.isModalOpen = false;
+    // this.sirhService.getAbsences(p.id).subscribe(data => this.absencesData[p.id] = data);
+  }
+
+  fermerHistorique(): void {
+    this.showHistorique = false;
     this.selectedPersonnel = null;
   }
 
-  validerAjout() {
-    if (this.selectedPersonnel && this.valeurAjout !== 0) {
-      // Logique métier
-      if (this.typeSelectionne === 'CP') {
-        this.selectedPersonnel.soldeCP += this.valeurAjout;
-      } else {
-        this.selectedPersonnel.soldeRTT += this.valeurAjout;
-      }
+  ouvrirModal(p: any): void {
+    this.selectedPersonnel = p;
+    this.valeurAjout = 0;
+    this.motif = '';
+    this.typeSelectionne = this.type_conge_data?.[0] || null;
+    this.isModalOpen = true;
+    this.showHistorique = false;
+    this.updatePreview();
+  }
 
-      console.log(`Ajout de ${this.valeurAjout}j (${this.typeSelectionne}) à ${this.selectedPersonnel.nom}. Motif: ${this.motif}`);
-      
-      // Ici appel API: this.sirhService.postSolde(...)
-      
-      this.fermerModal();
-    }
+  fermerModal(): void { this.isModalOpen = false; }
+
+  updatePreview(): void {
+    const selectedCode = this.typeSelectionne?.code;
+    const base = selectedCode === 'CP'
+      ? this.selectedPersonnel?.soldes?.[0]?.solde_restant || 0
+      : selectedCode === 'RTT'
+        ? this.selectedPersonnel?.soldes?.[1]?.solde_restant || 0
+        : selectedCode === 'DISPO'
+          ? this.selectedPersonnel?.soldes?.[2]?.solde_restant || 0
+          : 0;
+
+    this.soldeActuel = base;
+    this.soldePreview = base + (this.valeurAjout || 0);
+
+    console.log('Mise à jour de l\'aperçu :', {
+      typeSelectionne: this.typeSelectionne?.id,
+      soldeActuel: this.soldeActuel,
+      soldePreview: this.soldePreview,
+    });
+  }
+  validerAjout(): void {
+    if (!this.selectedPersonnel || !this.valeurAjout || !this.typeSelectionne?.id) return;
+
+    const payload = {
+      id: crypto.randomUUID(),
+      employe_id: this.selectedPersonnel?.employe_id,
+      type_conge_id: this.typeSelectionne.id,
+      annee: new Date().getFullYear(),
+      delta_jours: this.valeurAjout,
+      motif: this.motif || null,
+      auteur_id: null,
+    };
+
+    this.sirhService.Ajustement_solde_conge(payload).subscribe({
+      next: () => {
+        console.log('Ajustement solde envoyé', payload);
+        this.loadPersonnels();
+        this.fermerModal();
+      },
+      error: (err) => {
+        console.error('Erreur lors de l\'ajustement du solde :', err);
+      }
+    });
   }
 }

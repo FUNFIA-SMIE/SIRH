@@ -20,3 +20,15 @@ input::-webkit-inner-spin-button {
   -webkit-appearance: none;
   margin: 0;
 }
+
+/* Style pour la ligne sélectionnée */
+tr.selected-row {
+  background-color: rgba(59, 130, 246, 0.08);
+}
+
+/* Mode sombre */
+@media (prefers-color-scheme: dark) {
+  tr.selected-row {
+    background-color: rgba(59, 130, 246, 0.1);
+  }
+}
