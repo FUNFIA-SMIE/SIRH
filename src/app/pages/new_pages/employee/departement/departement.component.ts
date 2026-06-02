@@ -34,7 +34,7 @@ export class DepartementComponent implements OnInit {
     if (!departement || !departement.id) {
       return;
     }
-    this.router.navigate(['/new-departement'], { queryParams: { id: departement.id } });
+    this.router.navigate(['/dashboard/new-departement'], { queryParams: { id: departement.id } });
   }
 
   onDelete(departement: any): void {

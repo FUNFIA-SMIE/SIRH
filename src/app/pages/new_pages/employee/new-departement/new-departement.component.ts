@@ -128,7 +128,7 @@ export class NewDepartementComponent implements OnInit {
   }
 
   cancel() {
-    this.router.navigate(['/departement']);
+    this.router.navigate(['/dashboard/departement']);
   }
 
   onSubmit() {
@@ -166,7 +166,7 @@ export class NewDepartementComponent implements OnInit {
         this.sirhService.updateDepartment(this.currentDepartmentId, department)
           .then((response) => {
             console.log('Department updated:', response);
-            this.router.navigate(['/departement']);
+            this.router.navigate(['/dashboard/departement']);
           })
           .catch((error) => {
             console.error('Error updating department:', error);
@@ -175,7 +175,7 @@ export class NewDepartementComponent implements OnInit {
         this.sirhService.createDepartment(department).subscribe({
           next: (response) => {
             console.log('Department created:', response);
-            this.router.navigate(['/departement']);
+            this.router.navigate(['/dashboard/departement']);
           },
           error: (error) => {
             console.error('Error creating department:', error);

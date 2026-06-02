@@ -5,12 +5,12 @@
     <div class="flex items-center justify-between">
       <div class="flex items-center gap-3">
         <h1 class="text-2xl font-semibold text-slate-900 dark:text-white">Gestion des soldes</h1>
-        <span
-          class="text-xs font-medium px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
+        <span class="text-xs font-medium px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
           {{ personnels?.length }} collaborateurs
         </span>
       </div>
-      <input type="text" [(ngModel)]="searchQuery" placeholder="Rechercher..." class="text-sm px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700
+      <input type="text" [(ngModel)]="searchQuery" placeholder="Rechercher..."
+        class="text-sm px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700
                bg-white dark:bg-slate-800 text-slate-800 dark:text-white
                focus:outline-none focus:ring-2 focus:ring-blue-500 w-52" />
     </div>
@@ -39,8 +39,7 @@
       <table class="w-full">
         <thead class="bg-slate-50 dark:bg-slate-800/60">
           <tr>
-            <th class="px-5 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">Collaborateur
-            </th>
+            <th class="px-5 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">Collaborateur</th>
             <th class="px-5 py-3 text-center text-xs font-medium text-slate-400 uppercase tracking-wider">CP</th>
             <th class="px-5 py-3 text-center text-xs font-medium text-slate-400 uppercase tracking-wider">CSS</th>
             <th class="px-5 py-3 text-center text-xs font-medium text-slate-400 uppercase tracking-wider">Disp.</th>
@@ -48,21 +47,23 @@
           </tr>
         </thead>
         <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
-          <tr *ngFor="let p of personnelsFiltres; trackBy: trackByPersonnel" (click)="ouvrirHistorique(p)"
+          <tr *ngFor="let p of personnelsFiltres; trackBy: trackByPersonnel"
+            (click)="ouvrirHistorique(p)"
             [class.selected-row]="selectedPersonnel === p"
             class="hover:bg-slate-50 dark:hover:bg-slate-800/40 cursor-pointer transition-colors border-l-4 border-transparent"
-            [class.border-blue-600]="selectedPersonnel === p" [class.font-semibold]="selectedPersonnel === p">
+            [class.border-blue-600]="selectedPersonnel === p"
+            [class.font-semibold]="selectedPersonnel === p">
 
             <td class="px-5 py-3">
               <div class="flex items-center gap-3">
                 <div class="relative h-9 w-9 flex-shrink-0">
-                  <img *ngIf="p.photo_url" [src]="p.photo_url" class="h-full w-full rounded-full object-cover"
+                  <img *ngIf="p.photo_url" [src]="p.photo_url"
+                    class="h-full w-full rounded-full object-cover"
                     alt="{{ p.nom }} {{ p.prenom }}" />
                   <div *ngIf="!p.photo_url"
                     class="h-full w-full rounded-full flex items-center justify-center text-xs font-medium text-white"
                     [style.background]="p.color || '#185FA5'">{{ p.initiales }}</div>
-                  <span
-                    class="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-emerald-400 border-2 border-white dark:border-slate-900"></span>
+                  <span class="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-emerald-400 border-2 border-white dark:border-slate-900"></span>
                 </div>
                 <div>
                   <p class="text-sm font-medium text-slate-800 dark:text-white">{{ p.nom }} {{ p.prenom }}</p>
@@ -78,24 +79,24 @@
               </span>
             </td>
             <td class="px-5 py-3 text-center">
-              <span
-                class="inline-flex items-center justify-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+              <span class="inline-flex items-center justify-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300">
                 {{ p.soldes[1]?.solde_restant }} J
               </span>
             </td>
             <td class="px-5 py-3 text-center">
-              <span
-                class="inline-flex items-center justify-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+              <span class="inline-flex items-center justify-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300">
                 {{ p.soldes[2]?.solde_restant }} H
               </span>
             </td>
 
             <td class="px-5 py-3 text-right space-x-2">
-              <button (click)="$event.stopPropagation(); ouvrirHistorique(p)" class="text-xs px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700
+              <button (click)="$event.stopPropagation(); ouvrirHistorique(p)"
+                class="text-xs px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700
                        text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 transition-all">
                 Historique
               </button>
-              <button (click)="$event.stopPropagation(); ouvrirModal(p)" class="text-xs px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700
+              <button (click)="$event.stopPropagation(); ouvrirModal(p)"
+                class="text-xs px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700
                        text-slate-600 dark:text-slate-300 hover:bg-blue-600 hover:text-white
                        hover:border-blue-600 transition-all">
                 Ajuster
@@ -110,6 +111,7 @@
     <div *ngIf="showHistorique && selectedPersonnel"
       class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden">
 
+      <!-- En-tête -->
       <div class="px-5 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
         <div class="flex items-center gap-3">
           <div class="relative h-8 w-8 rounded-full flex-shrink-0">
@@ -141,42 +143,66 @@
         </button>
       </div>
 
+      <!-- Skeleton chargement -->
+      <div *ngIf="isLoadingHistorique" class="divide-y divide-slate-100 dark:divide-slate-800">
+        <div *ngFor="let i of [1,2,3]" class="flex items-center gap-3 px-5 py-3 animate-pulse">
+          <div class="h-9 w-9 rounded-lg bg-slate-100 dark:bg-slate-800 flex-shrink-0"></div>
+          <div class="flex-1 space-y-2">
+            <div class="h-3 bg-slate-100 dark:bg-slate-800 rounded w-2/3"></div>
+            <div class="h-2.5 bg-slate-100 dark:bg-slate-800 rounded w-1/3"></div>
+          </div>
+          <div class="text-right space-y-2 flex-shrink-0">
+            <div class="h-3 bg-slate-100 dark:bg-slate-800 rounded w-8 ml-auto"></div>
+            <div class="h-2.5 bg-slate-100 dark:bg-slate-800 rounded w-14"></div>
+          </div>
+        </div>
+      </div>
+
       <!-- Liste absences -->
-      <div class="divide-y divide-slate-100 dark:divide-slate-800">
+      <div *ngIf="!isLoadingHistorique" class="divide-y divide-slate-100 dark:divide-slate-800">
         <div *ngFor="let a of absencesFiltrees" class="flex items-center gap-3 px-5 py-3">
           <div class="h-9 w-9 rounded-lg flex items-center justify-center text-base flex-shrink-0"
-            [ngClass]="a.type==='CP' ? 'bg-blue-50 dark:bg-blue-900/20' : a.type==='RTT' ? 'bg-green-50 dark:bg-green-900/20' : 'bg-red-50 dark:bg-red-900/20'">
-            {{ a.type==='CP' ? '🏖' : a.type==='RTT' ? '📅' : '🏥' }}
+            [ngClass]="a.type==='CP' ? 'bg-blue-50 dark:bg-blue-900/20'
+                     : a.type==='CSS' ? 'bg-green-50 dark:bg-green-900/20'
+                     : 'bg-red-50 dark:bg-red-900/20'">
+            {{ a.type==='CP' ? '🏖' : a.type==='MAL' ? '🏥' : '📅' }}
           </div>
           <div class="flex-1 min-w-0">
-            <p class="text-sm font-medium text-slate-800 dark:text-white">{{ a.label }}</p>
+            <p class="text-sm font-medium text-slate-800 dark:text-white truncate">{{ a.label }}</p>
             <p class="text-xs text-slate-400">{{ a.debut | date:'dd/MM/yyyy' }} → {{ a.fin | date:'dd/MM/yyyy' }}</p>
+            <p *ngIf="a.motif" class="text-xs text-slate-400 italic truncate">{{ a.motif }}</p>
           </div>
           <div class="text-right flex-shrink-0">
-            <p class="text-sm font-medium"
-              [ngClass]="a.type==='CP'?'text-blue-700 dark:text-blue-300':a.type==='RTT'?'text-green-700 dark:text-green-300':'text-red-700 dark:text-red-300'">
+            <p class="text-sm font-medium mb-1"
+              [ngClass]="a.type==='CP'  ? 'text-blue-700 dark:text-blue-300'
+                       : a.type==='CSS' ? 'text-green-700 dark:text-green-300'
+                       : 'text-red-700 dark:text-red-300'">
               {{ a.jours }} j
             </p>
             <span class="text-xs px-2 py-0.5 rounded-full"
-              [ngClass]="a.statut==='approved' ? 'bg-green-50 text-green-700' : a.statut==='pending' ? 'bg-amber-50 text-amber-700' : 'bg-red-50 text-red-700'">
+              [ngClass]="a.statut==='approved' ? 'bg-green-50 text-green-700'
+                       : a.statut==='pending'  ? 'bg-amber-50 text-amber-700'
+                       : 'bg-red-50 text-red-700'">
               {{ a.statut==='approved' ? 'Approuvé' : a.statut==='pending' ? 'En attente' : 'Refusé' }}
             </span>
           </div>
         </div>
-        <div *ngIf="absencesFiltrees.length === 0" class="px-5 py-8 text-center text-sm text-slate-400">
+
+        <div *ngIf="absencesFiltrees.length === 0"
+          class="px-5 py-8 text-center text-sm text-slate-400">
           Aucune absence pour ce filtre.
         </div>
       </div>
+
     </div>
 
   </div>
 </div>
 
-<!-- Modal ajustement (inchangée mais avec meilleur style) -->
+<!-- Modal ajustement -->
 <div *ngIf="isModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4">
   <div class="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" (click)="fermerModal()"></div>
-  <div
-    class="relative bg-white dark:bg-slate-900 w-full max-w-md rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden">
+  <div class="relative bg-white dark:bg-slate-900 w-full max-w-md rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden">
     <div class="px-5 py-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
       <h2 class="text-base font-medium dark:text-white">Ajustement — {{ selectedPersonnel?.nom }}</h2>
       <button (click)="fermerModal()" class="text-slate-400 hover:text-slate-600 text-sm">✕</button>
@@ -198,10 +224,8 @@
         </div>
       </div>
       <div class="text-xs bg-slate-50 dark:bg-slate-800 rounded-lg px-3 py-2 text-slate-500">
-        Solde actuel : <strong class="text-slate-800 dark:text-white">{{ soldeActuel }} {{ typeSelectionne === 'DISPO' ?
-          'H' : 'j' }}</strong>
-        → Nouveau : <strong class="text-blue-600">{{ soldePreview }} {{ typeSelectionne === 'DISPO' ? 'H' : 'j'
-          }}</strong>
+        Solde actuel : <strong class="text-slate-800 dark:text-white">{{ soldeActuel }} {{ typeSelectionne?.code === 'DISPO' ? 'H' : 'j' }}</strong>
+        → Nouveau : <strong class="text-blue-600">{{ soldePreview }} {{ typeSelectionne?.code === 'DISPO' ? 'H' : 'j' }}</strong>
       </div>
       <div>
         <label class="block text-xs font-medium text-slate-400 uppercase mb-1.5">Motif</label>
@@ -212,9 +236,13 @@
     </div>
     <div class="px-5 py-3 bg-slate-50 dark:bg-slate-800/50 flex gap-3 border-t border-slate-100 dark:border-slate-800">
       <button (click)="fermerModal()"
-        class="flex-1 py-2 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 text-sm font-medium hover:bg-slate-100 transition-all">Annuler</button>
+        class="flex-1 py-2 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 text-sm font-medium hover:bg-slate-100 transition-all">
+        Annuler
+      </button>
       <button (click)="validerAjout()"
-        class="flex-1 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition-all">Confirmer</button>
+        class="flex-1 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition-all">
+        Confirmer
+      </button>
     </div>
   </div>
 </div>

@@ -242,7 +242,7 @@ async saveEmploye(): Promise<void> {
         this.showSuccessAlert('Succès', 'Employé modifié avec succès');
         
         setTimeout(() => {
-          this.router.navigate(['/all_employees']).then(() => window.location.reload());
+          this.router.navigate(['/dashboard/all_employees']).then(() => window.location.reload());
         }, 1500);
 
       } else {
@@ -298,7 +298,7 @@ async saveEmploye(): Promise<void> {
         await Promise.all(soldesPromises);
 
         setTimeout(() => {
-          this.router.navigate(['/all_employees']).then(() => window.location.reload());
+          this.router.navigate(['/dashboard/all_employees']).then(() => window.location.reload());
         }, 1500);
         
         this.resetForm();
@@ -340,7 +340,7 @@ async saveEmploye(): Promise<void> {
       this.showSuccessAlert('Succès', 'Employé supprimé avec succès');
       this.resetForm();
       setTimeout(() => {
-        this.router.navigate(['/all_employees']).then(() => window.location.reload());
+        this.router.navigate(['/dashboard/all_employees']).then(() => window.location.reload());
       }, 1500);
     } catch (error: any) {
       console.error('Erreur lors de la suppression:', error);

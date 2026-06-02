@@ -32,8 +32,13 @@ import { ConfigurationComponent } from './pages/new_pages/conges/configuration/c
 import { CalendrierComponent } from './pages/new_pages/conges/calendrier/calendrier.component';
 
 export const routes: Routes = [
-  {
+    {
     path: '',
+    redirectTo: 'signin',
+    pathMatch: 'full'
+  },
+  {
+    path: 'dashboard',
     component: AppLayoutComponent,
     children: [
       {
@@ -221,4 +226,6 @@ export const routes: Routes = [
     component: NotFoundComponent,
     title: 'Angular NotFound Dashboard | TailAdmin - Angular Admin Dashboard Template'
   },
+
 ];
+

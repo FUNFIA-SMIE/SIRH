@@ -25,7 +25,7 @@ export interface WorkflowEtape {
 }
 
 export interface DemandeConge {
-  id: string; 
+  id: string;
   employe: { id: string; nom: string; poste: string; matricule: string };
   typeConge: TypeConge;
   dateDebut: Date;
@@ -78,6 +78,7 @@ export class DemandeEnAttenteComponent implements OnInit {
   filterStatut = '';
   filterType = '';
   solde_par_employe: any;
+  token: any;
 
   // ── KPI ───────────────────────────────────────────────────
   get countEnAttente() { return this.allDemandes.filter((d: { statut: string; }) => d.statut === 'en_attente_manager' || d.statut === 'en_attente_rh').length; }
@@ -271,28 +272,73 @@ export class DemandeEnAttenteComponent implements OnInit {
   }
 
   // ── Actions liste ─────────────────────────────────────────
-  approuver(d: any): void {
+  async approuver(d: any): Promise<void> {
+    const data_ = localStorage.getItem('utilisateur');
+    if (data_) {
+      this.token = JSON.parse(data_);
+      console.log(this.token.poste_id);
 
-
-    console.log('Approuver demande', d);
-
-    // 1. Récupération de l'ID de l'utilisateur actuel
-    // const approbateurId = this.authService.getUserId();
-    const data = {
-      id: d.id,
-      approbateur_id: '82d713ee-6e72-4139-ad01-d9ff7fe48989',
-      commentaire: 'Approuvé via le portail',
     }
 
-    // 2. Appel au service backend
+    // On ajoute "as any" juste après le toPromise()
+    const departement = await this.service.getDepartmentById(d.departement_id).toPromise() as any;
+    const poste = await this.service.getPosteById(this.token.poste_id).toPromise() as any;
+
+    console.log('Département pour la demande', departement);
+    console.log('Poste pour la demande', poste);
+
+    if (departement.code === 'PARAMED' || departement.code === 'MED') {
+      if (d.statut === 'en_attente_manager') {
+        if (departement.responsable_id !== this.token.employe_id) {
+          alert("Le demande n'est pas encore approuvée par son manager.");
+          return;
+        }
+
+        if (poste.code === 'Directeur Exécutif') {
+          alert("Le demande n'est pas encore approuvée par son manager.");
+          return;
+        }
+
+        this.approuver_demande(d, 'en_attente_rh');
+
+
+      }
+
+      if (d.statut === 'en_attente_rh') {
+        if (departement.responsable_id !== this.token.employe_id) {
+          alert("Vous n'êtes pas le responsable de ce département.");
+          return;
+        }
+
+        if (poste.code !== 'Directeur Exécutif') {
+          alert("Le demande n'est pas encore approuvée par son manager.");
+          return;
+        }
+
+        this.approuver_demande(d, 'en_attente_rh');
+
+      }
+    }
+
+    this.approuver_demande(d, 'approuve');
+
+
+  }
+
+
+  approuver_demande(d: any, etat: any): void {
+    const data = {
+      id: d.id,
+      commentaire: 'Approuvé via le portail',
+      statut: etat
+    }
+
+    console.log('Approuver', data);
+
     this.service.valider_conges(data).subscribe({
       next: (res) => {
-        // 3. Mise à jour de l'interface locale : on retire la demande validée
         this.allDemandes = this.allDemandes.filter((item: { id: any; }) => item.id !== d.id);
         this.applyFilters();
-
-        // Optionnel : Notification de succès
-        // this.toast.success('La demande a été approuvée');
       },
       error: (err) => {
         console.error('Erreur validation:', err);
@@ -301,6 +347,7 @@ export class DemandeEnAttenteComponent implements OnInit {
     });
 
     this.applyFilters();
+
   }
 
   demanderRefus(d: DemandeConge): void {
@@ -622,7 +669,10 @@ export class DemandeEnAttenteComponent implements OnInit {
     console.log('Form values', v);
     const typeId = this.congeForm.get('type_conge_id')?.value;
 
-    // Préparation de l'objet pour le Backend (format snake_case comme la DB)
+    const departement = await this.service.getDepartmentById(this.selectedEmploye.departement_id).toPromise();
+
+    console.log('Département récupéré', departement);
+
     const payload = {
       id: crypto.randomUUID(),
       employe_id: this.selectedEmploye.employe_id,
@@ -635,7 +685,7 @@ export class DemandeEnAttenteComponent implements OnInit {
       motif: v.motif || null,
       demi_journee_debut: v.demi_journee_debut || false,
       demi_journee_fin: v.demi_journee_fin || false,
-      justificatif: this.justificatifBase64 || null // La string Base64
+      justificatif: this.justificatifBase64 || null, // La string Base64
     };
 
     this.service.creerConge(payload).subscribe({
@@ -648,6 +698,7 @@ export class DemandeEnAttenteComponent implements OnInit {
         this.showToast(err.error.error || 'Une erreur est survenue', 'error');
       }
     });
+
   }
 
   notification: { message: string, type: 'success' | 'error' } | null = null;

@@ -32,7 +32,7 @@ export class SoldesComponent implements OnInit {
   soldeActuel = 0;
   soldePreview = 0;
   histFilter = 'tous';
-  
+
 
   filtresHistorique = [
     { label: 'Tous', value: 'tous' },
@@ -87,14 +87,32 @@ export class SoldesComponent implements OnInit {
     return 'bg-red-50 text-red-800 dark:bg-red-900/20 dark:text-red-300';
   }
 
-  ouvrirHistorique(p: any): void {
+  isLoadingHistorique = false;
+
+  async ouvrirHistorique(p: any): Promise<void> {
     this.selectedPersonnel = p;
     this.showHistorique = true;
     this.histFilter = 'tous';
     this.isModalOpen = false;
-    // this.sirhService.getAbsences(p.id).subscribe(data => this.absencesData[p.id] = data);
-  }
+    this.absencesData[p.id] = [];
+    this.isLoadingHistorique = true;
 
+    const data = await this.sirhService.getAllConges_liste().toPromise();
+
+    data?.filter((c: any) => c.employe_id === p.employe_id).forEach((c: any) => {
+      this.absencesData[p.id].push({
+        type: c.code_type,
+        label: this.type_conge_data?.find(t => t.code === c.code_type)?.libelle || c.code_type,
+        debut: c.date_debut,
+        fin: c.date_fin,
+        jours: c.nb_jours,
+        motif: c.motif,
+        statut: c.statut ?? 'approved',
+      });
+    });
+
+    this.isLoadingHistorique = false;
+  }
   fermerHistorique(): void {
     this.showHistorique = false;
     this.selectedPersonnel = null;

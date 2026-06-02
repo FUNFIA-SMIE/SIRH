@@ -38,11 +38,11 @@ export class TousEmpComponent implements OnInit {
   }
 
   async editEmployee(id: string): Promise<void> {
-    await this.router.navigate(['/new_employe', id], { queryParams: { mode: 'edit' } });
+    await this.router.navigate(['/dashboard/new_employe', id], { queryParams: { mode: 'edit' } });
   }
 
   async viewEmployee(id: string): Promise<void> {
-    await this.router.navigate(['/new_employe', id], { queryParams: { mode: 'detail' } });
+    await this.router.navigate(['/dashboard/new_employe', id], { queryParams: { mode: 'detail' } });
   }
 
   async deleteEmployee(id: string): Promise<void> {
