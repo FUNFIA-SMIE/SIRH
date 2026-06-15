@@ -54,7 +54,6 @@
           <option value="en_attente_rh">Attente RH</option>
           <option value="approuve">Approuvé</option>
           <option value="refuse">Refusé</option>
-          <option value="brouillon">Brouillon</option>
         </select>
         <!-- Filtre type -->
         <select [(ngModel)]="filterType" (change)="applyFilters()"
@@ -183,10 +182,13 @@
           {{ d.motif }}
         </div>
 
-        <!-- Commentaire refus -->
-        <div *ngIf="d.commentaireRefus"
-          class="bg-red-50 dark:bg-red-950/30 border-l-2 border-red-400 pl-3 py-2 pr-2 mb-3 text-xs text-red-700 dark:text-red-400">
-          Refus : {{ d.commentaireRefus }}
+        <!-- ancien -->
+        <!-- nouveau -->
+        <div *ngIf="d.statut === 'refuse' && d.commentaireRefus"
+          class="bg-red-50 dark:bg-red-950/30 border-l-2 border-red-400 pl-3 py-2 pr-2 mb-3 rounded-r-lg">
+          <p class="text-[10px] font-medium text-red-500 dark:text-red-400 uppercase tracking-wide mb-0.5">Motif de
+            refus</p>
+          <p class="text-xs text-red-700 dark:text-red-300">{{ d.commentaireRefus }}</p>
         </div>
 
         <div class="h-px bg-gray-100 dark:bg-[#21293D] mb-3"></div>
@@ -381,16 +383,19 @@
         </div>
 
         <div class="md:col-span-1" *ngIf="isDispoType()">
-          <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Disponibilité (DISPO)</label>
+          <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Disponibilité
+            (DISPO)</label>
           <div class="space-y-2">
             <div class="flex items-center justify-between">
               <div>
                 <div class="text-xs text-gray-500">Début</div>
-                <div class="text-sm font-medium">{{ congeForm.value.heure_debut || '—' }} {{ congeForm.value.date_debut || '' }}</div>
+                <div class="text-sm font-medium">{{ congeForm.value.heure_debut || '—' }} {{ congeForm.value.date_debut
+                  || '' }}</div>
               </div>
               <div>
                 <div class="text-xs text-gray-500">Fin</div>
-                <div class="text-sm font-medium">{{ congeForm.value.heure_fin || '—' }} {{ congeForm.value.date_fin || '' }}</div>
+                <div class="text-sm font-medium">{{ congeForm.value.heure_fin || '—' }} {{ congeForm.value.date_fin ||
+                  '' }}</div>
               </div>
             </div>
 
@@ -401,8 +406,10 @@
                 [ngClass]="dispoStarted ? (dispoFinEnabled ? 'bg-red-600 text-white' : 'bg-gray-200 text-gray-400') : 'bg-green-600 text-white'">
                 {{ dispoStarted ? 'FIN' : 'DÉBUT' }}
               </button>
-              <div *ngIf="dispoStarted && !dispoFinEnabled" class="text-xs text-gray-500">Activation dans {{ dispoRemainingSeconds }}s...</div>
-              <div *ngIf="congeForm.value.heure_fin" class="ml-auto text-sm text-blue-600 font-medium">Total: {{ formatCalculatedTotal() }}</div>
+              <div *ngIf="dispoStarted && !dispoFinEnabled" class="text-xs text-gray-500">Activation dans {{
+                dispoRemainingSeconds }}s...</div>
+              <div *ngIf="congeForm.value.heure_fin" class="ml-auto text-sm text-blue-600 font-medium">Total: {{
+                formatCalculatedTotal() }}</div>
             </div>
           </div>
         </div>

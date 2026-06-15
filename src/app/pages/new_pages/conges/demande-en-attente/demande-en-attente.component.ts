@@ -79,14 +79,51 @@ export class DemandeEnAttenteComponent implements OnInit {
   filterType = '';
   solde_par_employe: any;
   token: any;
+  data_: any;
 
   // ── KPI ───────────────────────────────────────────────────
-  get countEnAttente() { return this.allDemandes.filter((d: { statut: string; }) => d.statut === 'en_attente_manager' || d.statut === 'en_attente_rh').length; }
-  get totalJoursDemandes() { return Math.round(this.allDemandes.reduce((s: any, d: { nbJours: any; }) => s + d.nbJours, 0)); }
-  get countApprouves() { return this.allDemandes.filter((d: { statut: string; }) => d.statut === 'approuve').length; }
-  get countRefuses() { return this.allDemandes.filter((d: { statut: string; }) => d.statut === 'refuse').length; }
+  // ── KPI ───────────────────────────────────────────────────
+  get countEnAttente() {
+    return this.allDemandes.filter((d: any) =>
+      d.statut === 'en_attente_manager' || d.statut === 'en_attente_rh'
+    ).length;
+  }
 
-  // ── Modal refus ───────────────────────────────────────────
+  get totalJoursDemandes() {
+    return Math.round(this.allDemandes.reduce((s: any, d: any) => s + d.nbJours, 0));
+  }
+
+  get countApprouves() {
+    return this.allDemandes.filter((d: any) => d.statut === 'approuve').length;
+  }
+
+  get countRefuses() {
+    return this.allDemandes.filter((d: any) => d.statut === 'refuse').length;
+  }
+
+  // ── Nouveaux getters ──────────────────────────────────────
+  get countTotal() {
+    return this.allDemandes.length;
+  }
+
+  get countBrouillons() {
+    return this.allDemandes.filter((d: any) => d.statut === 'brouillon').length;
+  }
+
+  get countAnnules() {
+    return this.allDemandes.filter((d: any) => d.statut === 'annule').length;
+  }
+
+  get tauxApprobation(): number {
+    const traites = this.countApprouves + this.countRefuses;
+    if (traites === 0) return 0;
+    return Math.round((this.countApprouves / traites) * 100);
+  }
+
+  get moyenneJoursParDemande(): number {
+    if (this.countTotal === 0) return 0;
+    return Math.round((this.totalJoursDemandes / this.countTotal) * 10) / 10;
+  }  // ── Modal refus ───────────────────────────────────────────
   modalRefusVisible = false;
   motifRefus = '';
   motifRefusError = false;
@@ -135,8 +172,25 @@ export class DemandeEnAttenteComponent implements OnInit {
     });
   }
 
-  ngOnInit(): void {
-    this.loadData();
+  async ngOnInit(): Promise<void> {
+    await this.loadData();
+
+    // Appliquer le filtre par défaut selon le rôle
+    this.data_ = localStorage.getItem('utilisateur');
+    if (this.data_) {
+      this.token = JSON.parse(this.data_);
+      const poste = await this.service.getPosteById(this.token.poste_id).toPromise() as any;
+
+      if (poste.intitule === 'Directeur Exécutif') {
+        this.filterStatut = 'en_attente_rh';      // ← filterStatut, pas searchQuery
+      } else if (poste.intitule === 'MEDECIN CHEF' || poste.intitule === 'MAJOR') {
+        this.filterStatut = 'en_attente_manager';
+      }
+      // Autres rôles → pas de filtre par défaut, tout s'affiche
+
+      this.applyFilters(); // ← un seul appel après avoir défini le filtre
+    }
+
   }
 
   // ── Chargement ────────────────────────────────────────────
@@ -147,35 +201,36 @@ export class DemandeEnAttenteComponent implements OnInit {
       this.filtered = [];
 
       // 2. Récupération des données
-      const rawDemandes = await this.service.getAllConges().toPromise() || [];
+      const rawDemandes = await this.service.getAllConges_liste().toPromise() || [];
+      console.log('RAW DEMANDES:', rawDemandes); // ← ajoute ça
       this.typesConge = await this.service.getTypes().toPromise() || [];
       this.listeEmployes = await this.service.getAllEmployees().toPromise() || [];
 
       // 3. Transformation des données "plates" du SQL en format "imbriqué" pour le HTML
       this.allDemandes = rawDemandes.map((d: any) => ({
         ...d,
-        // On crée l'objet 'employe' attendu par d.employe.nom dans le HTML
         employe: {
-          nom: d.nom,
-          prenom: d.prenom,
-          matricule: d.matricule,
+          nom: d.nom || '',
+          prenom: d.prenom || '',
+          matricule: d.matricule || '',
           poste: d.poste || 'Collaborateur',
           photo_url: d.photo_url || null,
         },
-        // On crée l'objet 'typeConge' attendu par d.typeConge.libelle
         typeConge: {
-          libelle: d.type_conge,
+          libelle: d.type_conge || '',
           code: d.code_type || 'CP',
-          validation_rh: d.validation_rh
+          validation_rh: d.validation_rh || false
         },
-        // Mapping des noms de colonnes SQL vers les variables CamelCase du HTML
         dateDebut: d.date_debut,
         dateFin: d.date_fin,
-        nbJours: d.nb_jours,
+        nbJours: Number(d.nb_jours) || 0,
         createdAt: d.created_at,
-        demiJourneeFin: d.demi_journee_fin,
+        demiJourneeFin: d.demi_journee_fin || false,
         soldeRestant: d.solde_restant || 0,
         soldeInitial: d.solde_initial || 0,
+        commentaireRefus: d.commentaire_refus || null,  // ← manquait
+        workflow: d.workflow || [],
+        statut: d.statut || 'brouillon'                  // ← manquait, crash sur .at(-1)
       }));
 
       console.log('Demandes restructurées :', this.allDemandes);
@@ -187,25 +242,37 @@ export class DemandeEnAttenteComponent implements OnInit {
   }
 
   applyFilters(): void {
-    // Sécurité si loadData n'est pas fini
     if (!this.allDemandes) return;
+
+    console.log('=== DEBUG FILTRES ===');
+    console.log('searchQuery:', this.searchQuery);
+    console.log('filterStatut:', this.filterStatut);
+    console.log('filterType:', this.filterType);
+    console.log('allDemandes count:', this.allDemandes.length);
+    console.log('sample statut:', this.allDemandes[0]?.statut);
+    console.log('sample typeConge.libelle:', this.allDemandes[0]?.typeConge?.libelle);
+    console.log('typesConge libelles:', this.typesConge?.map((t: any) => t.libelle));
 
     const q = this.searchQuery.toLowerCase().trim();
     const st = this.filterStatut;
     const ty = this.filterType;
 
     this.filtered = this.allDemandes.filter((d: any) => {
-      const nomComplet = `${d.employe.nom} ${d.employe.prenom}`.toLowerCase();
-      const typeLibelle = d.typeConge.libelle.toLowerCase();
+      const nom = (d.employe?.nom || '').toLowerCase();
+      const prenom = (d.employe?.prenom || '').toLowerCase();
+      const typeLibelle = (d.typeConge?.libelle || '').toLowerCase();
 
-      const matchQuery = !q || nomComplet.includes(q) || typeLibelle.includes(q);
+      const matchQuery = !q || nom.includes(q) || prenom.includes(q) || typeLibelle.includes(q);
       const matchStatut = !st || d.statut === st;
-      const matchType = !ty || d.typeConge.libelle === ty;
+      const matchType = !ty || (d.typeConge?.libelle || '').trim() === ty.trim();
+
+      console.log(`[${d.id}] statut="${d.statut}" matchStatut=${matchStatut} | type="${d.typeConge?.libelle}" matchType=${matchType}`);
 
       return matchQuery && matchStatut && matchType;
     });
-  }
 
+    console.log('filtered count:', this.filtered.length);
+  }
   // ── Helpers ───────────────────────────────────────────────
   initiales(nom: string): string {
     return nom.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase();
@@ -277,77 +344,70 @@ export class DemandeEnAttenteComponent implements OnInit {
     if (data_) {
       this.token = JSON.parse(data_);
       console.log(this.token.poste_id);
-
     }
 
-    // On ajoute "as any" juste après le toPromise()
+    console.log('Approbation demandée pour', d.departement_id);
+
     const departement = await this.service.getDepartmentById(d.departement_id).toPromise() as any;
     const poste = await this.service.getPosteById(this.token.poste_id).toPromise() as any;
-
     console.log('Département pour la demande', departement);
     console.log('Poste pour la demande', poste);
 
     if (departement.code === 'PARAMED' || departement.code === 'MED') {
+
       if (d.statut === 'en_attente_manager') {
+        // Bloquer si l'utilisateur n'est pas le responsable du département
         if (departement.responsable_id !== this.token.employe_id) {
-          alert("Le demande n'est pas encore approuvée par son manager.");
+          alert("La demande n'est pas encore approuvée par son manager.");
           return;
         }
-
-        if (poste.code === 'Directeur Exécutif') {
-          alert("Le demande n'est pas encore approuvée par son manager.");
+        // Bloquer si c'est le Directeur Exécutif (ne gère pas cette étape)
+        if (poste.intitule === 'Directeur Exécutif') {
+          alert("La demande n'est pas encore approuvée par son manager.");
           return;
         }
-
+        // ✅ Passe à l'étape suivante
         this.approuver_demande(d, 'en_attente_rh');
-
-
+        return; // 🔴 IMPORTANT : évite de tomber dans le this.approuver_demande final
       }
 
       if (d.statut === 'en_attente_rh') {
-        if (departement.responsable_id !== this.token.employe_id) {
-          alert("Vous n'êtes pas le responsable de ce département.");
+        // Bloquer si ce n'est PAS le Directeur Exécutif
+        if (poste.intitule !== 'Directeur Exécutif') {
+          alert("La demande doit être approuvée par le Directeur Exécutif.");
           return;
         }
-
-        if (poste.code !== 'Directeur Exécutif') {
-          alert("Le demande n'est pas encore approuvée par son manager.");
-          return;
-        }
-
-        this.approuver_demande(d, 'en_attente_rh');
-
+        // ✅ Approbation finale (corrigé : 'approuve' au lieu de 'en_attente_rh')
+        this.approuver_demande(d, 'approuve');
+        return; // 🔴 IMPORTANT
       }
+
+      // Statut non géré dans MED/PARAMED
+      return;
     }
 
+    // Département hors MED/PARAMED → approbation directe
     this.approuver_demande(d, 'approuve');
-
-
   }
 
-
-  approuver_demande(d: any, etat: any): void {
+  approuver_demande(d: any, etat: string): void {
     const data = {
       id: d.id,
       commentaire: 'Approuvé via le portail',
       statut: etat
-    }
-
+    };
     console.log('Approuver', data);
-
     this.service.valider_conges(data).subscribe({
       next: (res) => {
-        this.allDemandes = this.allDemandes.filter((item: { id: any; }) => item.id !== d.id);
-        this.applyFilters();
+        this.allDemandes = this.allDemandes.filter((item: { id: any }) => item.id !== d.id);
+        this.applyFilters(); // ✅ Une seule fois, dans le callback
       },
       error: (err) => {
         console.error('Erreur validation:', err);
         alert('Impossible de valider le congé : ' + (err.error?.error || 'Erreur serveur'));
       }
     });
-
-    this.applyFilters();
-
+    // 🔴 Supprimé : this.applyFilters() ici était prématuré
   }
 
   demanderRefus(d: DemandeConge): void {
@@ -358,20 +418,36 @@ export class DemandeEnAttenteComponent implements OnInit {
   }
 
   confirmerRefus(): void {
-    if (!this.motifRefus.trim()) { this.motifRefusError = true; return; }
+    if (!this.motifRefus.trim()) {
+      this.motifRefusError = true;
+      return;
+    }
+
     const d = this.demandeEnCours!;
-    d.statut = 'refuse';
-    d.commentaireRefus = this.motifRefus.trim();
-    d.workflow.push({
-      id: crypto.randomUUID(),
-      niveau: d.workflow.at(-1)?.niveau ?? 1,
-      approbateur: 'Vous',
-      action: 'refuse',
-      commentaire: this.motifRefus.trim(),
-      createdAt: new Date(),
+
+    this.service.valider_conges({ id: d.id, statut: 'refuse', commentaire: this.motifRefus.trim() }).subscribe({
+      next: () => {
+        // Mise à jour locale après succès API
+        d.statut = 'refuse';
+        d.commentaireRefus = this.motifRefus.trim();
+        d.workflow.push({
+          id: crypto.randomUUID(),
+          niveau: d.workflow.at(-1)?.niveau ?? 1,
+          approbateur: 'Vous',
+          action: 'refuse',
+          commentaire: this.motifRefus.trim(),
+          createdAt: new Date(),
+        });
+
+        this.closeModal();
+        this.applyFilters();
+      },
+      error: (err) => {
+        console.error('Erreur refus congé:', err);
+        // Affiche un message d'erreur à l'utilisateur
+        this.motifRefusError = true; // ou une autre variable d'erreur API
+      }
     });
-    this.closeModal();
-    this.applyFilters();
   }
 
   closeModal(): void {
