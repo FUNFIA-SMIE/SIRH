@@ -1,5 +1,5 @@
 # Step 1: Use an official Node.js 16 image to build the app
-FROM node:16 AS build
+FROM node:20-alpine AS build
 
 # Step 2: Set the working directory inside the container
 WORKDIR /app
