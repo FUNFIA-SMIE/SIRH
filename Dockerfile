@@ -33,7 +33,7 @@ RUN nginx -t
 COPY --from=build /app/dist/ /usr/share/nginx/html
 
 # Step 11: Expose port 80
-EXPOSE 5555
+EXPOSE 80
 
 # Step 12: Start the Nginx server to serve the app
 CMD ["nginx", "-g", "daemon off;"]
