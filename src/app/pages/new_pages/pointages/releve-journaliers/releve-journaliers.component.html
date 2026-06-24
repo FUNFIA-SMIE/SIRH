@@ -1,0 +1,203 @@
+    <div class="min-h-screen bg-gray-50 dark:bg-gray-950 transition-colors duration-300">
+
+      <!-- Header -->
+      <div class="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 px-6 py-4">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-lg bg-blue-600 flex items-center justify-center">
+              <svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+              </svg>
+            </div>
+            <div>
+              <h1 class="text-lg font-semibold text-gray-900 dark:text-white">Relevés journaliers</h1>
+              <p class="text-xs text-gray-500 dark:text-gray-400">Historique des pointages par employé</p>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-3">
+            <!-- Sélecteur mois -->
+            <div class="flex items-center gap-2 bg-gray-100 dark:bg-gray-800 rounded-lg px-3 py-2">
+              <button (click)="moisPrecedent()"
+                class="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+              <span class="text-sm font-medium text-gray-700 dark:text-gray-300 min-w-[110px] text-center">
+                {{ moisAffiche() }}
+              </span>
+              <button (click)="moisSuivant()"
+                class="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+            </div>
+
+            <!-- Filtre secteur -->
+            <select [(ngModel)]="secteurFiltre"
+              class="text-sm bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-0 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none">
+              <option value="">Tous les secteurs</option>
+              <option value="BUREAU">Bureau</option>
+              <option value="TERRAIN">Terrain</option>
+              <option value="PRODUCTION">Production</option>
+            </select>
+
+            <!-- Export -->
+            <button
+              class="flex items-center gap-2 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors">
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+              </svg>
+              Exporter
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stats bar -->
+      <div class="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 px-6 py-3">
+        <div class="flex items-center gap-6">
+          <div class="flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+            <span class="text-xs text-gray-600 dark:text-gray-400">Présent <strong class="text-gray-900 dark:text-white">{{ statsGlobales().presents }}</strong></span>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-red-500"></span>
+            <span class="text-xs text-gray-600 dark:text-gray-400">Absent <strong class="text-gray-900 dark:text-white">{{ statsGlobales().absents }}</strong></span>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+            <span class="text-xs text-gray-600 dark:text-gray-400">Retard <strong class="text-gray-900 dark:text-white">{{ statsGlobales().retards }}</strong></span>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-gray-300 dark:bg-gray-600"></span>
+            <span class="text-xs text-gray-600 dark:text-gray-400">Week-end / Férié</span>
+          </div>
+          <div class="ml-auto text-xs text-gray-500 dark:text-gray-400">
+            {{ employesFiltres().length }} employé(s) · {{ joursOuvres() }} jours ouvrés
+          </div>
+        </div>
+      </div>
+
+      <!-- Contenu principal -->
+      <div class="p-6 space-y-4">
+
+        @for (employe of employesFiltres(); track employe.id) {
+          <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden">
+
+            <!-- En-tête employé -->
+            <div class="flex items-center justify-between px-5 py-3 bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-800 cursor-pointer"
+              (click)="toggleEmploye(employe.id)">
+              <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center">
+                  <span class="text-xs font-bold text-blue-700 dark:text-blue-300">
+                    {{ employe.prenom[0] }}{{ employe.nom[0] }}
+                  </span>
+                </div>
+                <div>
+                  <span class="text-sm font-semibold text-gray-900 dark:text-white">{{ employe.prenom }} {{ employe.nom }}</span>
+                  <span class="ml-2 text-xs text-gray-500 dark:text-gray-400">#{{ employe.matricule }}</span>
+                  <span class="ml-2 text-xs bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 px-2 py-0.5 rounded-full">{{ employe.secteur }}</span>
+                </div>
+              </div>
+
+              <div class="flex items-center gap-4">
+                <!-- Mini stats -->
+                <div class="flex items-center gap-3 text-xs">
+                  <span class="flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
+                    <span class="font-semibold">{{ employe.jours_presents }}</span> présents
+                  </span>
+                  <span class="flex items-center gap-1 text-red-500 dark:text-red-400">
+                    <span class="font-semibold">{{ employe.jours_absents }}</span> absents
+                  </span>
+                  <span class="flex items-center gap-1 text-amber-500 dark:text-amber-400">
+                    <span class="font-semibold">{{ employe.retards }}</span> retards
+                  </span>
+                  <span class="text-gray-500 dark:text-gray-400">{{ employe.heures_total }} h</span>
+                </div>
+
+                <!-- Horaire badge -->
+                <span class="text-xs bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 px-2 py-1 rounded-md font-mono">
+                  {{ employe.horaire }}
+                </span>
+
+                <svg class="w-4 h-4 text-gray-400 transition-transform duration-200"
+                  [class.rotate-180]="employeOuvert() === employe.id"
+                  fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                </svg>
+              </div>
+            </div>
+
+            <!-- Tableau pointages -->
+            @if (employeOuvert() === employe.id) {
+              <div class="overflow-x-auto">
+                <table class="w-full text-xs">
+                  <thead>
+                    <tr class="bg-gray-50 dark:bg-gray-800/30">
+                      <th class="text-left px-4 py-2.5 text-gray-500 dark:text-gray-400 font-medium w-24">Date</th>
+                      <th class="text-center px-3 py-2.5 text-gray-500 dark:text-gray-400 font-medium">Jour</th>
+                      <th colspan="2" class="text-center px-3 py-2.5 text-gray-500 dark:text-gray-400 font-medium border-l border-gray-200 dark:border-gray-700">
+                        Matin
+                      </th>
+                      <th colspan="2" class="text-center px-3 py-2.5 text-gray-500 dark:text-gray-400 font-medium border-l border-gray-200 dark:border-gray-700">
+                        Après-midi
+                      </th>
+                      <th colspan="2" class="text-center px-3 py-2.5 text-gray-500 dark:text-gray-400 font-medium border-l border-gray-200 dark:border-gray-700">
+                        Soir
+                      </th>
+                      <th class="text-center px-4 py-2.5 text-gray-500 dark:text-gray-400 font-medium border-l border-gray-200 dark:border-gray-700">Statut</th>
+                      <th class="text-center px-4 py-2.5 text-gray-500 dark:text-gray-400 font-medium">Total</th>
+                    </tr>
+                    <tr class="bg-gray-50 dark:bg-gray-800/30 border-t border-gray-100 dark:border-gray-800">
+                      <th></th><th></th>
+                      <th class="text-center px-3 py-1.5 text-gray-400 dark:text-gray-500 font-normal border-l border-gray-200 dark:border-gray-700">IN</th>
+                      <th class="text-center px-3 py-1.5 text-gray-400 dark:text-gray-500 font-normal">OUT</th>
+                      <th class="text-center px-3 py-1.5 text-gray-400 dark:text-gray-500 font-normal border-l border-gray-200 dark:border-gray-700">IN</th>
+                      <th class="text-center px-3 py-1.5 text-gray-400 dark:text-gray-500 font-normal">OUT</th>
+                      <th class="text-center px-3 py-1.5 text-gray-400 dark:text-gray-500 font-normal border-l border-gray-200 dark:border-gray-700">IN</th>
+                      <th class="text-center px-3 py-1.5 text-gray-400 dark:text-gray-500 font-normal">OUT</th>
+                      <th></th><th></th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
+                    @for (p of employe.pointages; track p.date) {
+                      <tr [class]="rowClass(p.statut)">
+                        <td class="px-4 py-2.5 font-mono text-gray-700 dark:text-gray-300">{{ formatDate(p.date) }}</td>
+                        <td class="px-3 py-2.5 text-center text-gray-500 dark:text-gray-400">{{ p.jour }}</td>
+
+                        <td class="px-3 py-2.5 text-center font-mono border-l border-gray-100 dark:border-gray-800"
+                          [class]="heureClass(p.matin_in, 'in')">{{ p.matin_in || '—' }}</td>
+                        <td class="px-3 py-2.5 text-center font-mono"
+                          [class]="heureClass(p.matin_out, 'out')">{{ p.matin_out || '—' }}</td>
+
+                        <td class="px-3 py-2.5 text-center font-mono border-l border-gray-100 dark:border-gray-800"
+                          [class]="heureClass(p.apmidi_in, 'in')">{{ p.apmidi_in || '—' }}</td>
+                        <td class="px-3 py-2.5 text-center font-mono"
+                          [class]="heureClass(p.apmidi_out, 'out')">{{ p.apmidi_out || '—' }}</td>
+
+                        <td class="px-3 py-2.5 text-center font-mono border-l border-gray-100 dark:border-gray-800"
+                          [class]="heureClass(p.soir_in, 'in')">{{ p.soir_in || '—' }}</td>
+                        <td class="px-3 py-2.5 text-center font-mono"
+                          [class]="heureClass(p.soir_out, 'out')">{{ p.soir_out || '—' }}</td>
+
+                        <td class="px-4 py-2.5 text-center border-l border-gray-100 dark:border-gray-800">
+                          <span [class]="statutBadgeClass(p.statut)">{{ statutLabel(p.statut) }}</span>
+                        </td>
+                        <td class="px-4 py-2.5 text-center font-mono text-gray-700 dark:text-gray-300">
+                          {{ p.heures_total || '—' }}
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    </div>

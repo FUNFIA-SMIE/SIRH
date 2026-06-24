@@ -1,0 +1,213 @@
+<div class="min-h-screen bg-gray-50 dark:bg-gray-950 transition-colors duration-300">
+
+  <!-- Header -->
+  <div class="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 px-6 py-4">
+    <div class="flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-lg bg-violet-600 flex items-center justify-center">
+          <svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+        <div>
+          <h1 class="text-lg font-semibold text-gray-900 dark:text-white">Heures supplémentaires</h1>
+          <p class="text-xs text-gray-500 dark:text-gray-400">Suivi et validation des heures supplémentaires</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <!-- Mois -->
+        <div class="flex items-center gap-2 bg-gray-100 dark:bg-gray-800 rounded-lg px-3 py-2">
+          <button (click)="moisPrecedent()"
+            class="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+          <span class="text-sm font-medium text-gray-700 dark:text-gray-300 min-w-[110px] text-center">
+            {{ moisAffiche() }}
+          </span>
+          <button (click)="moisSuivant()"
+            class="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
+        </div>
+
+        <!-- Filtre statut -->
+        <select [(ngModel)]="statutFiltre"
+          class="text-sm bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-0 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-violet-500">
+          <option value="">Tous les statuts</option>
+          <option value="en_attente">En attente</option>
+          <option value="valide">Validé</option>
+          <option value="refuse">Refusé</option>
+          <option value="paye">Payé</option>
+        </select>
+
+        <button
+          class="flex items-center gap-2 px-3 py-2 bg-violet-600 hover:bg-violet-700 text-white text-sm font-medium rounded-lg transition-colors">
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+          </svg>
+          Saisir HS
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Cartes récapitulatif -->
+  <div class="px-6 py-4 grid grid-cols-3 gap-4">
+    <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4">
+      <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">Total heures</p>
+      <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ totaux().heures.toFixed(1) }}<span class="text-sm font-normal text-gray-400 ml-1">h</span></p>
+      <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">ce mois</p>
+    </div>
+    <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4">
+      <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">En attente</p>
+      <p class="text-2xl font-bold text-amber-600 dark:text-amber-400">{{ totaux().enAttente }}</p>
+      <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">à valider</p>
+    </div>
+    <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4">
+      <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">Employés concernés</p>
+      <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ totaux().employes }}</p>
+      <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">ce mois</p>
+    </div>
+  </div>
+
+  <!-- Tableau accordéon -->
+  <div class="px-6 pb-6">
+    <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden">
+      
+      @if (employesGroupes().length === 0) {
+        <div class="py-12 text-center text-gray-400 dark:text-gray-600">
+          <svg class="w-10 h-10 mx-auto mb-3 opacity-40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <p class="text-sm">Aucune heure supplémentaire pour ce filtre</p>
+        </div>
+      } @else {
+        @for (groupe of employesGroupes(); track groupe.employe_id; let isFirst = $first) {
+          <!-- Ligne principale de l'employé -->
+          <div [class]="!isFirst ? 'border-t border-gray-200 dark:border-gray-800' : ''">
+            <!-- Ligne de l'employé (cliquable) -->
+            <button
+              (click)="toggleEmploye(groupe.employe_id)"
+              class="w-full px-5 py-4 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors text-left">
+              
+              <div class="flex items-center gap-3 flex-1">
+                <!-- Avatar -->
+                <div class="w-8 h-8 rounded-full bg-violet-100 dark:bg-violet-900/40 flex items-center justify-center flex-shrink-0">
+                  <span class="text-xs font-bold text-violet-700 dark:text-violet-300">
+                    {{ groupe.employe_prenom[0] }}{{ groupe.employe_nom[0] }}
+                  </span>
+                </div>
+
+                <!-- Info employé -->
+                <div class="flex-1">
+                  <p class="font-medium text-gray-900 dark:text-white text-sm">
+                    {{ groupe.employe_prenom }} {{ groupe.employe_nom }}
+                  </p>
+                  <p class="text-xs text-gray-400 dark:text-gray-500">{{ groupe.departement }}</p>
+                </div>
+
+                <!-- Statistiques -->
+                <div class="flex items-center gap-4 ml-4">
+                  <div class="text-center">
+                    <p class="text-sm font-bold text-gray-900 dark:text-white">{{ getTotalHeures(groupe.heures).toFixed(1) }}h</p>
+                    <p class="text-xs text-gray-400 dark:text-gray-500">heures</p>
+                  </div>
+                  
+                  @if (getStatusCount(groupe.heures, 'en_attente') > 0) {
+                    <div class="text-center">
+                      <p class="text-sm font-bold text-amber-600 dark:text-amber-400">{{ getStatusCount(groupe.heures, 'en_attente') }}</p>
+                      <p class="text-xs text-gray-400 dark:text-gray-500">attente</p>
+                    </div>
+                  }
+
+                  @if (getStatusCount(groupe.heures, 'valide') > 0) {
+                    <div class="text-center">
+                      <p class="text-sm font-bold text-emerald-600 dark:text-emerald-400">{{ getStatusCount(groupe.heures, 'valide') }}</p>
+                      <p class="text-xs text-gray-400 dark:text-gray-500">validé</p>
+                    </div>
+                  }
+
+                  @if (getStatusCount(groupe.heures, 'refuse') > 0) {
+                    <div class="text-center">
+                      <p class="text-sm font-bold text-red-600 dark:text-red-400">{{ getStatusCount(groupe.heures, 'refuse') }}</p>
+                      <p class="text-xs text-gray-400 dark:text-gray-500">refusé</p>
+                    </div>
+                  }
+                </div>
+              </div>
+
+              <!-- Icône chevron -->
+              <svg 
+                class="w-5 h-5 text-gray-400 dark:text-gray-500 flex-shrink-0 ml-4 transition-transform duration-200"
+                [class.rotate-180]="isExpanded(groupe.employe_id)"
+                fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+              </svg>
+            </button>
+
+            <!-- Contenu dépliable (détails des heures) -->
+            @if (isExpanded(groupe.employe_id)) {
+              <div class="border-t border-gray-100 dark:border-gray-800/50 bg-gray-50/50 dark:bg-gray-800/20 px-5 py-2">
+                @for (hs of groupe.heures; track hs.id; let isLast = $last) {
+                  <div [class]="!isLast ? 'border-b border-gray-200 dark:border-gray-800/50' : ''" 
+                    class="py-3 first:pt-3 last:pb-3">
+                    <div class="flex items-center justify-between gap-4">
+                      <!-- Détails de la date et horaire -->
+                      <div class="flex items-center gap-4 flex-1">
+                        <div class="flex flex-col gap-1 min-w-[130px]">
+                          <p class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ formatDate(hs.date) }}</p>
+                          <p class="text-xs text-gray-500 dark:text-gray-400 font-mono">{{ hs.heure_debut }} – {{ hs.heure_fin }}</p>
+                        </div>
+
+                        <div class="flex items-center gap-3">
+                          <span class="text-sm font-semibold text-gray-900 dark:text-white">{{ hs.duree_h }}h</span>
+                          <span [class]="typeBadge(hs.type)">{{ typeLabel(hs.type) }}</span>
+                          <span [class]="statutBadge(hs.statut)">{{ statutLabel(hs.statut) }}</span>
+                        </div>
+                      </div>
+
+                      <!-- Motif -->
+                      <div class="flex-1 text-xs text-gray-500 dark:text-gray-400 max-w-[180px] truncate" [title]="hs.motif">
+                        {{ hs.motif }}
+                      </div>
+
+                      <!-- Actions -->
+                      <div class="flex-shrink-0">
+                        @if (hs.statut === 'en_attente') {
+                          <div class="flex items-center gap-1">
+                            <button (click)="valider(hs.id)"
+                              class="p-1.5 rounded-md bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-200 dark:hover:bg-emerald-900/60 transition-colors"
+                              title="Valider">
+                              <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
+                              </svg>
+                            </button>
+                            <button (click)="refuser(hs.id)"
+                              class="p-1.5 rounded-md bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 hover:bg-red-200 dark:hover:bg-red-900/60 transition-colors"
+                              title="Refuser">
+                              <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12" />
+                              </svg>
+                            </button>
+                          </div>
+                        } @else {
+                          <span class="text-xs text-gray-400 dark:text-gray-600">—</span>
+                        }
+                      </div>
+                    </div>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        }
+      }
+    </div>
+  </div>
+</div>

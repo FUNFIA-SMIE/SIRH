@@ -30,9 +30,11 @@ import { SoldesComponent } from './pages/new_pages/conges/soldes/soldes.componen
 import { DemandeEnAttenteComponent } from './pages/new_pages/conges/demande-en-attente/demande-en-attente.component';
 import { ConfigurationComponent } from './pages/new_pages/conges/configuration/configuration.component';
 import { CalendrierComponent } from './pages/new_pages/conges/calendrier/calendrier.component';
+import { ReleveJournaliersComponent } from './pages/new_pages/pointages/releve-journaliers/releve-journaliers.component';
+import { HeuresSuppComponent } from './pages/new_pages/pointages/heures-supp/heures-supp.component';
 
 export const routes: Routes = [
-    {
+  {
     path: '',
     redirectTo: 'signin',
     pathMatch: 'full'
@@ -201,6 +203,21 @@ export const routes: Routes = [
         path: 'images',
         component: ImagesComponent,
         title: 'Angular Images Dashboard | TailAdmin - Angular Admin Dashboard Template'
+      },
+      {
+        path: 'videos',
+        component: VideosComponent,
+        title: 'Angular Videos Dashboard | TailAdmin - Angular Admin Dashboard Template'
+      },
+      {
+        path: 'releve_journ',
+        component: ReleveJournaliersComponent,
+        title: 'Angular Videos Dashboard | TailAdmin - Angular Admin Dashboard Template'
+      },
+      {
+        path: 'heures_supp',
+        component: HeuresSuppComponent,
+        title: 'Angular Videos Dashboard | TailAdmin - Angular Admin Dashboard Template'
       },
       {
         path: 'videos',
