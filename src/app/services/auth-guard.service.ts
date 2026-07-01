@@ -1,20 +1,23 @@
 import { Injectable, inject } from '@angular/core';
-import { CanActivate, Router, UrlTree } from '@angular/router';
+import { CanActivate, CanActivateChild, Router, UrlTree } from '@angular/router';
+import { AuthService } from './auth.service';
 
 @Injectable({
   providedIn: 'root',
 })
-export class AuthGuardService implements CanActivate {
+export class AuthGuardService implements CanActivate, CanActivateChild {
   private router = inject(Router);
+  private authService = inject(AuthService);
 
   canActivate(): boolean | UrlTree {
-    const token = localStorage.getItem('token');
-    
-    if (token) {
+    if (this.authService.isAuthenticated()) {
       return true;
     }
 
-    // Renvoie un UrlTree pour rediriger proprement
     return this.router.createUrlTree(['/signin']);
+  }
+
+  canActivateChild(): boolean | UrlTree {
+    return this.canActivate();
   }
 }
