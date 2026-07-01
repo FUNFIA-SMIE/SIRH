@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { ServicePointageService } from '../../../../services/service-pointage.service';
 
 @Component({
   selector: 'app-releve-journaliers',
@@ -8,12 +9,15 @@ import { FormsModule } from '@angular/forms';
   templateUrl: './releve-journaliers.component.html',
   styleUrl: './releve-journaliers.component.css',
 })
-export class ReleveJournaliersComponent implements OnInit{
+export class ReleveJournaliersComponent implements OnInit {
   moisCourant = signal(new Date());
   secteurFiltre = '';
   employeOuvert = signal<string | null>(null);
 
   employes = signal<any[]>([]);
+  erreurChargement = signal<string | null>(null);
+
+  constructor(private pointageParser: ServicePointageService) { }
 
   moisAffiche = computed(() => {
     return this.moisCourant().toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
@@ -48,7 +52,47 @@ export class ReleveJournaliersComponent implements OnInit{
   }
 
   ngOnInit() {
-    this.employes.set(this.genererDonneesDemo());
+    this.chargerDonnees();
+  }
+
+  /** Charge et parse le fichier correspondant au mois actuellement sélectionné. */
+  private chargerDonnees() {
+    const url = this.urlFichierPourMois(this.moisCourant());
+
+    console.log("URL",url)
+    this.erreurChargement.set(null);
+
+    fetch(url)
+      .then(res => {
+        if (!res.ok) throw new Error(`Fichier introuvable: ${url}`);
+        return res.text();
+      })
+      .then(xml => {
+        // Garde-fou : si le serveur a renvoyé du HTML (404 silencieuse -> index.html)
+        if (xml.trim().startsWith('<!DOCTYPE') || xml.trim().startsWith('<html')) {
+          throw new Error(`Le fichier n'existe pas réellement à: ${url}`);
+        }
+        const employes = this.pointageParser.parseRapportXml(xml);
+        if (employes.length === 0) {
+          this.erreurChargement.set('Aucune donnée trouvée dans le fichier pour ce mois.');
+        }
+        this.employes.set(employes);
+      })
+      .catch(err => {
+        console.error('Erreur de chargement du relevé:', err);
+        this.employes.set([]);
+        this.erreurChargement.set('Aucune donnée disponible pour ce mois.');
+      });
+  }
+
+  /**
+   * Construit le chemin du fichier selon l'année/mois sélectionnés.
+   * Exemple: /assets/2026/06-Resume.xls
+   */
+  private urlFichierPourMois(date: Date): string {
+    const annee = date.getFullYear();
+    const mois = String(date.getMonth() + 1).padStart(2, '0'); // 05, 06, ...
+    return `/${annee}/${mois}-Resume.xls`;
   }
 
   toggleEmploye(id: string) {
@@ -59,14 +103,14 @@ export class ReleveJournaliersComponent implements OnInit{
     const d = new Date(this.moisCourant());
     d.setMonth(d.getMonth() - 1);
     this.moisCourant.set(d);
-    this.employes.set(this.genererDonneesDemo());
+    this.chargerDonnees();
   }
 
   moisSuivant() {
     const d = new Date(this.moisCourant());
     d.setMonth(d.getMonth() + 1);
     this.moisCourant.set(d);
-    this.employes.set(this.genererDonneesDemo());
+    this.chargerDonnees();
   }
 
   rowClass(statut: string): string {
@@ -107,79 +151,8 @@ export class ReleveJournaliersComponent implements OnInit{
     return labels[statut] || statut;
   }
 
-  private genererDonneesDemo(): any[] {
-    const jours = ['DIM', 'LUN', 'MAR', 'MER', 'JEU', 'VEN', 'SAM'];
-    const d = this.moisCourant();
-    const annee = d.getFullYear();
-    const mois = d.getMonth();
-    const nbJours = new Date(annee, mois + 1, 0).getDate();
-
-    const genPointages = (tauxAbsence: number): any[] => {
-      const pts: any[] = [];
-      for (let i = 1; i <= nbJours; i++) {
-        const date = new Date(annee, mois, i);
-        const jourIdx = date.getDay();
-        const isWE = jourIdx === 0 || jourIdx === 6;
-        if (isWE) {
-          pts.push({
-            date: `${String(mois + 1).padStart(2, '0')}.${String(i).padStart(2, '0')}`,
-            jour: jours[jourIdx], matin_in: '', matin_out: '', apmidi_in: '',
-            apmidi_out: '', soir_in: '', soir_out: '', statut: 'weekend'
-          });
-        } else {
-          const rand = Math.random();
-          if (rand < tauxAbsence) {
-            pts.push({
-              date: `${String(mois + 1).padStart(2, '0')}.${String(i).padStart(2, '0')}`,
-              jour: jours[jourIdx], matin_in: '', matin_out: '', apmidi_in: '',
-              apmidi_out: '', soir_in: '', soir_out: '', statut: 'absent'
-            });
-          } else {
-            const retard = Math.random() < 0.2;
-            const minIn = retard ? 7 * 60 + 30 + Math.floor(Math.random() * 20) + 10 : 7 * 60 + 20 + Math.floor(Math.random() * 15);
-            const fmt = (m: number) => `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
-            pts.push({
-              date: `${String(mois + 1).padStart(2, '0')}.${String(i).padStart(2, '0')}`,
-              jour: jours[jourIdx],
-              matin_in: fmt(minIn) + (retard ? '*' : ' '),
-              matin_out: '',
-              apmidi_in: '',
-              apmidi_out: fmt(17 * 60 + Math.floor(Math.random() * 10)) + (Math.random() < 0.3 ? '*' : ' '),
-              soir_in: '', soir_out: '',
-              statut: retard ? 'retard' : 'present',
-              heures_total: '8.5'
-            });
-          }
-        }
-      }
-      return pts;
-    };
-
-    return [
-      {
-        id: '1', matricule: '00001', nom: 'LALAINA', prenom: 'Jean', secteur: 'BUREAU',
-        poste: 'Comptable', horaire: '07:30-17:00',
-        jours_planifies: 22, jours_presents: 17, jours_absents: 5, retards: 3, heures_total: '144.5',
-        pointages: genPointages(0.22)
-      },
-      {
-        id: '2', matricule: '00002', nom: 'RAKOTO', prenom: 'Marie', secteur: 'BUREAU',
-        poste: 'Secrétaire', horaire: '07:30-17:00',
-        jours_planifies: 22, jours_presents: 20, jours_absents: 2, retards: 1, heures_total: '170.0',
-        pointages: genPointages(0.09)
-      },
-      {
-        id: '3', matricule: '00003', nom: 'ANDRIANA', prenom: 'Paul', secteur: 'TERRAIN',
-        poste: 'Technicien', horaire: '07:00-16:30',
-        jours_planifies: 22, jours_presents: 19, jours_absents: 3, retards: 4, heures_total: '160.5',
-        pointages: genPointages(0.13)
-      }
-    ];
-  }
-
   formatDate(dateStr: string): string {
     if (!dateStr) return '';
-    // support MM.DD or MM.DD.YYYY
     const m = dateStr.match(/^(\d{2})\.(\d{2})(?:\.(\d{4}))?$/);
     if (m) {
       const month = parseInt(m[1], 10) - 1;
@@ -195,5 +168,4 @@ export class ReleveJournaliersComponent implements OnInit{
       return dateStr;
     }
   }
-
 }

@@ -20,6 +20,7 @@ import { SignUpComponent } from './pages/auth-pages/sign-up/sign-up.component';
 import { CalenderComponent } from './pages/calender/calender.component';
 import { TousEmpComponent } from './pages/new_pages/employee/tous-emp/tous-emp.component';
 import { OrganigrammeComponent } from './pages/new_pages/employee/organigramme/organigramme.component';
+import { AuthGuardService } from './services/auth-guard.service';
 import { DossierComponent } from './pages/new_pages/employee/dossier/dossier.component';
 import { NewEmployeComponent } from './pages/new_pages/new-employe/new-employe.component';
 import { DepartementComponent } from './pages/new_pages/employee/departement/departement.component';
@@ -42,6 +43,8 @@ export const routes: Routes = [
   {
     path: 'dashboard',
     component: AppLayoutComponent,
+    canActivate: [AuthGuardService],
+    canActivateChild: [AuthGuardService],
     children: [
       {
         path: '',
@@ -212,12 +215,12 @@ export const routes: Routes = [
       {
         path: 'releve_journ',
         component: ReleveJournaliersComponent,
-        title: 'Angular Videos Dashboard | TailAdmin - Angular Admin Dashboard Template'
+        title: 'Relevés Journaliers'
       },
       {
         path: 'heures_supp',
         component: HeuresSuppComponent,
-        title: 'Angular Videos Dashboard | TailAdmin - Angular Admin Dashboard Template'
+        title: 'Heures Supplémentaires'
       },
       {
         path: 'videos',

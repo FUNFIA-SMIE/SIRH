@@ -4,6 +4,7 @@ import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { DropdownItemTwoComponent } from '../../ui/dropdown/dropdown-item/dropdown-item.component-two';
 import { HttpClient } from '@angular/common/http';
+import { AuthService } from '../../../../services/auth.service';
 
 @Component({
   selector: 'app-user-dropdown',
@@ -16,6 +17,7 @@ export class UserDropdownComponent implements OnInit {
   historiques: any;
   private http = inject(HttpClient);
   private router = inject(Router);
+  private authService = inject(AuthService);
 
   async ngOnInit() {
     const data = localStorage.getItem('utilisateur');
@@ -35,18 +37,8 @@ export class UserDropdownComponent implements OnInit {
   }
 
 logout() {
-  // 1. On nettoie tout
-  localStorage.removeItem('utilisateur');
-  localStorage.removeItem('token');
-  localStorage.clear(); 
-
-  // 2. On vérifie en direct si c'est vide AVANT de naviguer
-  console.log('Vérification immédiate :', localStorage.getItem('utilisateur')); // Doit afficher null
-
-  // 3. On navigue après un micro-délai
-  setTimeout(() => {
-    this.router.navigateByUrl('/signin');
-  }, 100);
+  this.authService.logout();
+  this.router.navigateByUrl('/signin');
 }
 
 }

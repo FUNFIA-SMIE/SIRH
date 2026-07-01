@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
 import { LabelComponent } from '../../form/label/label.component';
 import { CheckboxComponent } from '../../form/input/checkbox.component';
@@ -6,6 +6,7 @@ import { ButtonComponent } from '../../ui/button/button.component';
 import { InputFieldComponent } from '../../form/input/input-field.component';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
+import { AuthService } from '../../../../services/auth.service';
 
 @Component({
   selector: 'app-signin-form',
@@ -21,10 +22,11 @@ import { HttpClient } from '@angular/common/http';
   templateUrl: './signin-form.component.html',
   styles: ``
 })
-export class SigninFormComponent {
+export class SigninFormComponent implements OnInit {
 
   private http = inject(HttpClient);
   private router = inject(Router);
+  private authService = inject(AuthService);
 
   // Propriétés d'état de l'interface graphique
   showPassword = false;
@@ -40,6 +42,12 @@ export class SigninFormComponent {
 
   togglePasswordVisibility() {
     this.showPassword = !this.showPassword;
+  }
+
+  async ngOnInit(): Promise<void> {
+    if (this.authService.isAuthenticated()) {
+      this.router.navigateByUrl('/dashboard/all_employees');
+    }
   }
 
   async onLogin(): Promise<void> {
@@ -68,20 +76,14 @@ export class SigninFormComponent {
       next: (res) => {
         this.isLoading = false;
 
-        // 1. SÉCURITÉ : On nettoie FORCÉMENT le localStorage avant d'écrire
-        // Cela évite que le navigateur fusionne ou garde de vieilles données en cache
-        localStorage.removeItem('token');
-        localStorage.removeItem('utilisateur');
+        // 1. Sauvegarde de la session fraîche via le service centralisé
+        this.authService.login(res.token, res.utilisateur);
 
-        // 2. DÉBOGAGE FRONT-END : On inspecte DIRECTEMENT la réponse brute du serveur
+        // 2. Débogage front-end : on inspecte la réponse serveur
         console.log('--- Réponse brute reçue du Serveur ---', res);
         console.log('Contenu de res.utilisateur :', res.utilisateur);
 
-        // 3. Sauvegarde de la session fraîche
-        localStorage.setItem('token', res.token);
-        localStorage.setItem('utilisateur', JSON.stringify(res.utilisateur));
-
-        // 4. Redirection vers le Dashboard
+        // 3. Redirection vers le Dashboard
         this.router.navigateByUrl('/dashboard/all_employees');
       },
       error: async (err) => {
