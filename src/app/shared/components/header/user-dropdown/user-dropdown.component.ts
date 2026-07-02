@@ -36,9 +36,10 @@ export class UserDropdownComponent implements OnInit {
     this.isOpen = false;
   }
 
-logout() {
-  this.authService.logout();
-  this.router.navigateByUrl('/signin');
-}
+  logout() {
+
+    this.authService.logout();
+    this.router.navigateByUrl('/signin');
+  }
 
 }
