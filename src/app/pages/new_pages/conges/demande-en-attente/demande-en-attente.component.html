@@ -373,7 +373,7 @@
 
         <div class="md:col-span-1" *ngIf="!isDispoType()">
           <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Date de début</label>
-          <input type="date" formControlName="date_debut" (change)="calculerJours()"
+          <input type="date" formControlName="date_debut" (change)="onDateDebutChange()"
             class="w-full bg-gray-50 dark:bg-[#1C2333] border border-gray-200 dark:border-[#21293D] rounded-xl p-3 text-sm text-gray-900 dark:text-white outline-none focus:border-blue-500">
           <label class="flex items-center gap-2 mt-2 cursor-pointer">
             <input type="checkbox" formControlName="demi_journee_debut" (change)="calculerJours()"
@@ -415,11 +415,11 @@
         </div>
 
         <div class="md:col-span-1" *ngIf="!isDispoType()">
-          <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Date de fin</label>
-          <input type="date" formControlName="date_fin" (change)="calculerJours()"
+          <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Date de retour</label>
+          <input type="date" formControlName="date_fin" (change)="onDateFinChange()"
             class="w-full bg-gray-50 dark:bg-[#1C2333] border border-gray-200 dark:border-[#21293D] rounded-xl p-3 text-sm text-gray-900 dark:text-white outline-none focus:border-blue-500">
           <label class="flex items-center gap-2 mt-2 cursor-pointer">
-            <input type="checkbox" formControlName="demi_journee_fin" (change)="calculerJours()"
+            <input type="checkbox" formControlName="demi_journee_fin" (change)="onDemiJourneeFinChange()"
               class="rounded border-gray-300 text-blue-600">
             <span class="text-[11px] text-gray-500">Terminer le matin</span>
           </label>

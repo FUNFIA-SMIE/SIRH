@@ -634,6 +634,39 @@ export class DemandeEnAttenteComponent implements OnInit {
     return this.getTypeSelectionne()?.code === 'DISPO' ? 'H' : 'j';
   }
 
+  // ── Validation date de fin / retour ────────────────────────
+  dateFinError = '';
+
+  onDateFinChange(): void {
+    this.validerDateFin();
+  }
+
+  onDemiJourneeFinChange(): void {
+    this.validerDateFin();
+  }
+
+private validerDateFin(): void {
+  const dateFinCtrl = this.congeForm.get('date_fin');
+  const dateFin = dateFinCtrl?.value;
+
+  if (!dateFin) {
+    this.dateFinError = '';
+    dateFinCtrl?.setErrors(null);
+    return;
+  }
+
+  const d = new Date(dateFin + 'T12:00:00');
+  const jour = d.getDay(); // 0 = dimanche, 6 = samedi
+
+  if (jour === 0) {
+    this.dateFinError = 'Le retour ne peut pas être fixé un dimanche.';
+    dateFinCtrl?.setErrors({ jourInterdit: true });
+    return;
+  }
+
+  this.dateFinError = '';
+  dateFinCtrl?.setErrors(null);
+}
   calculerJours(): number {
     const values = this.congeForm.value;
     if (this.isDispoType()) {
@@ -667,7 +700,7 @@ export class DemandeEnAttenteComponent implements OnInit {
     if (values.demi_journee_debut) diffDays -= 0.5;
     if (values.demi_journee_fin) diffDays -= 0.5;
 
-    return diffDays < 0 ? 0 : diffDays;
+    return diffDays < 0 ? 0 : diffDays - 1;
   }
 
   justificatifBase64: string | null = null;
@@ -783,6 +816,40 @@ export class DemandeEnAttenteComponent implements OnInit {
     this.notification = { message, type };
     setTimeout(() => this.notification = null, 4000); // Disparaît après 4s
   }
+
+
+  // ── Validation dates ────────────────────────────────────────
+  dateDebutError = '';
+
+  onDateDebutChange(): void {
+    this.validerDateDebut();
+  }
+
+
+
+  private validerDateDebut(): void {
+    const dateDebutCtrl = this.congeForm.get('date_debut');
+    const dateDebut = dateDebutCtrl?.value;
+
+    if (!dateDebut) {
+      this.dateDebutError = '';
+      dateDebutCtrl?.setErrors(null);
+      return;
+    }
+
+    const d = new Date(dateDebut + 'T12:00:00');
+    const jour = d.getDay(); // 0 = dimanche, 6 = samedi
+
+    if (jour === 0 || jour === 6) {
+      this.dateDebutError = 'Le congé ne peut pas commencer un samedi ou un dimanche.';
+      dateDebutCtrl?.setErrors({ jourInterdit: true });
+      return;
+    }
+
+    this.dateDebutError = '';
+    dateDebutCtrl?.setErrors(null);
+  }
+
 }
 
 // ── Mock employés (pour la modal de création) ─────────────────
@@ -808,6 +875,8 @@ const MOCK_EMPLOYES: EmployeLight[] = [
     soldes: { t1: 15, t2: 5, t3: 0, t4: 3 }
   },
 ];
+
+
 
 // ── Mock demandes ─────────────────────────────────────────────
 
