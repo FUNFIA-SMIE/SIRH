@@ -135,6 +135,10 @@ export class DemandeEnAttenteComponent implements OnInit {
   selectedEmploye: any | null = null;
   listeEmployes: any;
 
+  // ── Modal attachments ──────────────────────────────────────
+  modalAttachmentVisible = false;
+  demandeCourseAttachment: any | null = null;
+
   // ── Avatar palette ────────────────────────────────────────
   private readonly AVATARS = [
     { bg: '#EEF2FF', color: '#4338CA' }, { bg: '#FFF7ED', color: '#C2410C' },
@@ -202,36 +206,47 @@ export class DemandeEnAttenteComponent implements OnInit {
 
       // 2. Récupération des données
       const rawDemandes = await this.service.getAllConges_liste().toPromise() || [];
-      console.log('RAW DEMANDES:', rawDemandes); // ← ajoute ça
+      console.log('RAW DEMANDES:', rawDemandes);
+      console.log('Premier record:', rawDemandes[0]);
+      console.log('Clés du premier record:', Object.keys(rawDemandes[0] || {}));
       this.typesConge = await this.service.getTypes().toPromise() || [];
       this.listeEmployes = await this.service.getAllEmployees().toPromise() || [];
 
       // 3. Transformation des données "plates" du SQL en format "imbriqué" pour le HTML
-      this.allDemandes = rawDemandes.map((d: any) => ({
-        ...d,
-        employe: {
-          nom: d.nom || '',
-          prenom: d.prenom || '',
-          matricule: d.matricule || '',
-          poste: d.poste || 'Collaborateur',
-          photo_url: d.photo_url || null,
-        },
-        typeConge: {
-          libelle: d.type_conge || '',
-          code: d.code_type || 'CP',
-          validation_rh: d.validation_rh || false
-        },
-        dateDebut: d.date_debut,
-        dateFin: d.date_fin,
-        nbJours: Number(d.nb_jours) || 0,
-        createdAt: d.created_at,
-        demiJourneeFin: d.demi_journee_fin || false,
-        soldeRestant: d.solde_restant || 0,
-        soldeInitial: d.solde_initial || 0,
-        commentaireRefus: d.commentaire_refus || null,  // ← manquait
-        workflow: d.workflow || [],
-        statut: d.statut || 'brouillon'                  // ← manquait, crash sur .at(-1)
-      }));
+      this.allDemandes = rawDemandes.map((d: any) => {
+        console.log(`Mapping demande ${d.id}:`, {
+          demi_journee_debut: d.demi_journee_debut,
+          demi_journee_fin: d.demi_journee_fin,
+          demiJourneeDebut_result: d.demi_journee_debut === true || d.demi_journee_debut === 't' || d.demi_journee_debut === 1,
+          demiJourneeFin_result: d.demi_journee_fin === true || d.demi_journee_fin === 't' || d.demi_journee_fin === 1
+        });
+        return {
+          ...d,
+          employe: {
+            nom: d.nom || '',
+            prenom: d.prenom || '',
+            matricule: d.matricule || '',
+            poste: d.poste || 'Collaborateur',
+            photo_url: d.photo_url || null,
+          },
+          typeConge: {
+            libelle: d.type_conge || '',
+            code: d.code_type || 'CP',
+            validation_rh: d.validation_rh || false
+          },
+          dateDebut: d.date_debut,
+          dateFin: d.date_fin,
+          nbJours: Number(d.nb_jours) || 0,
+          createdAt: d.created_at,
+          demiJourneeDebut: d.demi_journee_debut === true || d.demi_journee_debut === 't' || d.demi_journee_debut === 1,
+          demiJourneeFin: d.demi_journee_fin === true || d.demi_journee_fin === 't' || d.demi_journee_fin === 1,
+          soldeRestant: d.solde_restant || 0,
+          soldeInitial: d.solde_initial || 0,
+          commentaireRefus: d.commentaire_refus || null,  // ← manquait
+          workflow: d.workflow || [],
+          statut: d.statut || 'brouillon'                  // ← manquait, crash sur .at(-1)
+        };
+      });
 
       console.log('Demandes restructurées :', this.allDemandes);
       this.applyFilters();
@@ -336,6 +351,43 @@ export class DemandeEnAttenteComponent implements OnInit {
 
   isActionnable(statut: string): boolean {
     return statut === 'en_attente_manager' || statut === 'en_attente_rh';
+  }
+
+  // ── Formatage temps et attachments ─────────────────────────
+  getTimePeriod(d: any): string {
+    const debut = d.demiJourneeDebut === true || d.demiJourneeDebut === 't' || d.demiJourneeDebut === 1;
+    const fin = d.demiJourneeFin === true || d.demiJourneeFin === 't' || d.demiJourneeFin === 1;
+
+    console.log(`getTimePeriod [${d.id}]: debut=${debut}, fin=${fin} (raw: debut=${d.demiJourneeDebut}, fin=${d.demiJourneeFin})`);
+
+    if (debut && fin) {
+      return 'Matin et Midi'; // Demi-journée début et fin
+    } else if (debut) {
+      return 'Matin'; // Seulement demi-journée au début
+    } else if (fin) {
+      return 'Midi'; // Seulement demi-journée à la fin
+    } else {
+      return 'Journée complète'; // Pas de demi-journée
+    }
+  }
+
+  ouvrirModalJustificatif(d: any): void {
+    this.demandeCourseAttachment = d;
+    this.modalAttachmentVisible = true;
+  }
+
+  closeAttachmentModal(): void {
+    this.modalAttachmentVisible = false;
+    this.demandeCourseAttachment = null;
+  }
+
+  copyToClipboard(text: string): void {
+    navigator.clipboard.writeText(text).then(() => {
+      // Optional: Show a toast notification
+      console.log('URL copiée dans le presse-papiers');
+    }).catch(err => {
+      console.error('Erreur lors de la copie:', err);
+    });
   }
 
   // ── Actions liste ─────────────────────────────────────────
@@ -485,12 +537,14 @@ export class DemandeEnAttenteComponent implements OnInit {
     this.fileName = '';
   }
 
-  onEmployeSelected(): void {          // ← méthode manquante ajoutée
-    const id = this.congeForm.get('employe_id')?.value;
-    this.selectedEmploye = this.listeEmployes.find((e: { id: any; }) => e.id === id) ?? null;
-    // Réinitialise le type de congé quand on change d'employé
-    this.congeForm.patchValue({ type_conge_id: '' });
-  }
+onEmployeSelected(): void {
+  const id = this.congeForm.get('employe_id')?.value;
+  this.selectedEmploye = this.listeEmployes.find(
+    (e: { id: any }) => String(e.id) === String(id)
+  ) ?? null;
+  console.log('Employé sélectionné :', this.selectedEmploye);
+  this.congeForm.patchValue({ type_conge_id: '' });
+}
 
   isDispoType(): boolean {
     return this.getTypeSelectionne()?.code === 'DISPO';
@@ -616,7 +670,7 @@ export class DemandeEnAttenteComponent implements OnInit {
     if (!typeId) return 0;
 
 
-    this.solde_par_employe = await this.service.getSoldes(this.selectedEmploye.employe_id, typeId).toPromise();
+    this.solde_par_employe = await this.service.getSoldes(this.selectedEmploye.id, typeId).toPromise();
     this.solde_par_employe = this.solde_par_employe[0].solde_restant;
 
     console.log('Soldes récupérés pour l\'employé', this.solde_par_employe);
@@ -784,7 +838,7 @@ private validerDateFin(): void {
 
     const payload = {
       id: crypto.randomUUID(),
-      employe_id: this.selectedEmploye.employe_id,
+      employe_id: this.selectedEmploye.id,
       type_conge_id: typeId,
       date_debut: v.date_debut,
       date_fin: v.date_fin,

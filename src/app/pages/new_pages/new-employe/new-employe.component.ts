@@ -166,8 +166,8 @@ export class NewEmployeComponent implements OnInit {
       cancelButtonColor: '#6b7280',
     }).then((result) => {
       if (!result.isConfirmed) return;
-      /*
-            this.service.reinitialiserMotDePasse({ employe_id: employe.id }).subscribe({
+      
+            this.service.reinitalisationMotdePasse({ employe_id: employe.id }).subscribe({
               next: (res) => {
                 Swal.fire({
                   title: 'Mot de passe réinitialisé',
@@ -194,7 +194,7 @@ export class NewEmployeComponent implements OnInit {
                 });
               },
             });
-            */
+            
     });
   }
 

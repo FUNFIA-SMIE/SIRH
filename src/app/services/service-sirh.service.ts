@@ -204,6 +204,10 @@ export class ServiceSirhService {
     return this.http.post(`${this.url}/employes/creation_compte_SIRH`, data);
   }
 
+  reinitalisationMotdePasse(data: any): Observable<any> {
+    return this.http.post(`${this.url}/employes/reinitialisation_mot_de_passe`, data);
+  }
+
   recupererCompteUtilisateur(id: any): Observable<any> {
     return this.http.get(`${this.url}/employes/employes_utilisateurs/${id}`);
   }
