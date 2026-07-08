@@ -406,7 +406,7 @@ export class DemandeEnAttenteComponent implements OnInit {
     console.log('Département pour la demande', departement);
     console.log('Poste pour la demande', poste);
 
-    if (departement.code === 'PARAMED' || departement.code === 'MED') {
+    if (departement.code === 'PARAMED' || departement.code === 'MED' || departement.code === 'DENT') {
 
       if (d.statut === 'en_attente_manager') {
         // Bloquer si l'utilisateur n'est pas le responsable du département
@@ -438,6 +438,7 @@ export class DemandeEnAttenteComponent implements OnInit {
       // Statut non géré dans MED/PARAMED
       return;
     }
+
 
     // Département hors MED/PARAMED → approbation directe
     this.approuver_demande(d, 'approuve');
