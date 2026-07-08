@@ -245,7 +245,8 @@ export class DemandeEnAttenteComponent implements OnInit {
           soldeInitial: d.solde_initial || 0,
           commentaireRefus: d.commentaire_refus || null,  // ← manquait
           workflow: d.workflow || [],
-          statut: d.statut || 'brouillon'                  // ← manquait, crash sur .at(-1)
+          statut: d.statut || 'brouillon',              // ← manquait, crash sur .at(-1)
+          justificatifUrl: d.justificatif_url || null // ← manquait, crash sur .justificatifUrl
         };
       });
 
