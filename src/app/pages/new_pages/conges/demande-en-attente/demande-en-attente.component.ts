@@ -2,6 +2,7 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ServiceSirhService } from '../../../../services/service-sirh.service';
+import { uuidv4 } from '../../../../shared/utils/uuid';
 import { SoldesComponent } from '../soldes/soldes.component';
 
 export interface TypeConge {
@@ -483,7 +484,7 @@ export class DemandeEnAttenteComponent implements OnInit {
         d.statut = 'refuse';
         d.commentaireRefus = this.motifRefus.trim();
         d.workflow.push({
-          id: crypto.randomUUID(),
+          id: uuidv4(),
           niveau: d.workflow.at(-1)?.niveau ?? 1,
           approbateur: 'Vous',
           action: 'refuse',
@@ -785,7 +786,7 @@ private validerDateFin(): void {
       const typeConge = this.typesConge.find((t: { id: any; }) => t.id === v.type_conge_id)!;
   
       const nouvelle: DemandeConge = {
-        id: crypto.randomUUID(),
+        id: uuidv4(),
         employe: {
           id: employe.id,
           nom: `${employe.nom_employe} ${employe.prenom_employe}`,
@@ -805,7 +806,7 @@ private validerDateFin(): void {
         soldeRestant: this.solde_par_employe,
         createdAt: new Date(),
         workflow: [{
-          id: crypto.randomUUID(),
+          id: uuidv4(),
           niveau: 1,
           approbateur: 'Système',
           action: 'soumis',
@@ -837,7 +838,7 @@ private validerDateFin(): void {
     console.log('Département récupéré', departement);
 
     const payload = {
-      id: crypto.randomUUID(),
+      id: uuidv4(),
       employe_id: this.selectedEmploye.id,
       type_conge_id: typeId,
       date_debut: v.date_debut,

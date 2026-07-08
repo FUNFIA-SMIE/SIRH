@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ServiceSirhService } from '../../../../services/service-sirh.service';
+import { uuidv4 } from '../../../../shared/utils/uuid';
 import { FormsModule } from '@angular/forms';
 import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
 
@@ -153,7 +154,7 @@ export class SoldesComponent implements OnInit {
     if (!this.selectedPersonnel || !this.valeurAjout || !this.typeSelectionne?.id) return;
 
     const payload = {
-      id: crypto.randomUUID(),
+      id: uuidv4(),
       employe_id: this.selectedPersonnel?.employe_id,
       type_conge_id: this.typeSelectionne.id,
       annee: new Date().getFullYear(),
