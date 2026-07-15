@@ -410,16 +410,23 @@ export class DemandeEnAttenteComponent implements OnInit {
     if (departement.code === 'PARAMED' || departement.code === 'MED' || departement.code === 'DENT') {
 
       if (d.statut === 'en_attente_manager') {
+        // Bloquer si c'est le Directeur Exécutif (ne gère pas cette étape)
+        if (poste.intitule === 'Directeur Exécutif') {
+          const proceed = await this.timedConfirm("Vous êtes Directeur Exécutif. Confirmer l'approbation ?", 10);
+          if (!proceed) return;
+          this.approuver_demande(d, 'en_attente_rh');
+          return;
+        }
         // Bloquer si l'utilisateur n'est pas le responsable du département
         if (departement.responsable_id !== this.token.employe_id) {
           alert("La demande n'est pas encore approuvée par son manager.");
           return;
         }
-        // Bloquer si c'est le Directeur Exécutif (ne gère pas cette étape)
-        if (poste.intitule === 'Directeur Exécutif') {
-          alert("La demande n'est pas encore approuvée par son manager.");
-          return;
+        else {
+          this.approuver_demande(d, 'en_attente_rh');
+
         }
+
         // ✅ Passe à l'étape suivante
         this.approuver_demande(d, 'en_attente_rh');
         return; // 🔴 IMPORTANT : évite de tomber dans le this.approuver_demande final
@@ -444,6 +451,85 @@ export class DemandeEnAttenteComponent implements OnInit {
     // Département hors MED/PARAMED → approbation directe
     this.approuver_demande(d, 'approuve');
   }
+
+  async timedConfirm(message: string, seconds = 10): Promise<boolean> {
+    return new Promise(resolve => {
+      const overlay = document.createElement('div');
+      overlay.style.position = 'fixed';
+      overlay.style.left = '0';
+      overlay.style.top = '0';
+      overlay.style.width = '100%';
+      overlay.style.height = '100%';
+      overlay.style.display = 'flex';
+      overlay.style.alignItems = 'center';
+      overlay.style.justifyContent = 'center';
+      overlay.style.background = 'rgba(0,0,0,0.4)';
+      overlay.style.zIndex = '9999';
+
+      const box = document.createElement('div');
+      box.style.background = 'white';
+      box.style.padding = '16px';
+      box.style.borderRadius = '8px';
+      box.style.maxWidth = '90%';
+      box.style.boxShadow = '0 2px 12px rgba(0,0,0,0.2)';
+      box.style.textAlign = 'center';
+
+      const msg = document.createElement('div');
+      msg.style.marginBottom = '12px';
+      msg.textContent = message;
+
+      const counter = document.createElement('div');
+      counter.style.marginBottom = '12px';
+      counter.style.fontWeight = '600';
+      counter.textContent = `Veuillez patienter ${seconds} s...`;
+
+      const btns = document.createElement('div');
+      btns.style.display = 'flex';
+      btns.style.justifyContent = 'center';
+      btns.style.gap = '8px';
+
+      const btnCancel = document.createElement('button');
+      btnCancel.textContent = 'Annuler';
+      btnCancel.style.padding = '8px 12px';
+
+      const btnOk = document.createElement('button');
+      btnOk.textContent = 'OK';
+      btnOk.disabled = true;
+      btnOk.style.padding = '8px 12px';
+
+      btns.appendChild(btnCancel);
+      btns.appendChild(btnOk);
+
+      box.appendChild(msg);
+      box.appendChild(counter);
+      box.appendChild(btns);
+      overlay.appendChild(box);
+      document.body.appendChild(overlay);
+
+      let remaining = seconds;
+      const interval = setInterval(() => {
+        remaining -= 1;
+        if (remaining > 0) {
+          counter.textContent = `Veuillez patienter ${remaining} s...`;
+        } else {
+          clearInterval(interval);
+          counter.textContent = '';
+          btnOk.disabled = false;
+        }
+      }, 1000);
+
+      const cleanup = (result: boolean) => {
+        clearInterval(interval);
+        try { document.body.removeChild(overlay); } catch (e) { }
+        resolve(result);
+      };
+
+      btnCancel.addEventListener('click', () => cleanup(false));
+      btnOk.addEventListener('click', () => cleanup(true));
+    });
+  }
+
+
 
   approuver_demande(d: any, etat: string): void {
     const data = {
@@ -540,14 +626,14 @@ export class DemandeEnAttenteComponent implements OnInit {
     this.fileName = '';
   }
 
-onEmployeSelected(): void {
-  const id = this.congeForm.get('employe_id')?.value;
-  this.selectedEmploye = this.listeEmployes.find(
-    (e: { id: any }) => String(e.id) === String(id)
-  ) ?? null;
-  console.log('Employé sélectionné :', this.selectedEmploye);
-  this.congeForm.patchValue({ type_conge_id: '' });
-}
+  onEmployeSelected(): void {
+    const id = this.congeForm.get('employe_id')?.value;
+    this.selectedEmploye = this.listeEmployes.find(
+      (e: { id: any }) => String(e.id) === String(id)
+    ) ?? null;
+    console.log('Employé sélectionné :', this.selectedEmploye);
+    this.congeForm.patchValue({ type_conge_id: '' });
+  }
 
   isDispoType(): boolean {
     return this.getTypeSelectionne()?.code === 'DISPO';
@@ -702,28 +788,28 @@ onEmployeSelected(): void {
     this.validerDateFin();
   }
 
-private validerDateFin(): void {
-  const dateFinCtrl = this.congeForm.get('date_fin');
-  const dateFin = dateFinCtrl?.value;
+  private validerDateFin(): void {
+    const dateFinCtrl = this.congeForm.get('date_fin');
+    const dateFin = dateFinCtrl?.value;
 
-  if (!dateFin) {
+    if (!dateFin) {
+      this.dateFinError = '';
+      dateFinCtrl?.setErrors(null);
+      return;
+    }
+
+    const d = new Date(dateFin + 'T12:00:00');
+    const jour = d.getDay(); // 0 = dimanche, 6 = samedi
+
+    if (jour === 0) {
+      this.dateFinError = 'Le retour ne peut pas être fixé un dimanche.';
+      dateFinCtrl?.setErrors({ jourInterdit: true });
+      return;
+    }
+
     this.dateFinError = '';
     dateFinCtrl?.setErrors(null);
-    return;
   }
-
-  const d = new Date(dateFin + 'T12:00:00');
-  const jour = d.getDay(); // 0 = dimanche, 6 = samedi
-
-  if (jour === 0) {
-    this.dateFinError = 'Le retour ne peut pas être fixé un dimanche.';
-    dateFinCtrl?.setErrors({ jourInterdit: true });
-    return;
-  }
-
-  this.dateFinError = '';
-  dateFinCtrl?.setErrors(null);
-}
   calculerJours(): number {
     const values = this.congeForm.value;
     if (this.isDispoType()) {
