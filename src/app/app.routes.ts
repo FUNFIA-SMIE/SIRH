@@ -229,7 +229,7 @@ export const routes: Routes = [
       },
     ]
   },
-  // auth pages
+  // auth pagesdd
   {
     path: 'signin',
     component: SignInComponent,
