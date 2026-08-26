@@ -34,7 +34,7 @@ export class SigninFormComponent implements OnInit {
   isLoading = false;
   errorMessage = '';
 
-  // Données du formulaire
+  // Données du formulaires
   identifiant = '';
   mot_de_passe = '';
 
