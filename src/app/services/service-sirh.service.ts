@@ -138,10 +138,11 @@ export class ServiceSirhService {
     return this.http.get<any[]>(`${this.url}/conges/conges_en_attente`);
   }
 
-  getAllConges_liste(): Observable<any[]> {
-    return this.http.get<any[]>(`${this.url}/conges`);
+  getAllConges_liste(page = 1, limit = 50): Observable<{ data: any[], pagination: any }> {
+    return this.http.get<{ data: any[], pagination: any }>(
+      `${this.url}/conges?page=${page}&limit=${limit}`
+    );
   }
-
   deletePoste(id: number) {
     return this.http.delete(`${this.url}/postes/${id}`);
   }
@@ -229,5 +230,21 @@ export class ServiceSirhService {
     return this.http.post(`${this.url}/conges/ajustement`, data);
   }
 
+  async getAllConges_liste_complet(): Promise<any[]> {
+    let page = 1;
+    const limit = 200;
+    let allData: any[] = [];
+    let hasMore = true;
 
+    while (hasMore) {
+      const res: any = await this.http
+        .get<{ data: any[], pagination: any }>(`${this.url}/conges?page=${page}&limit=${limit}`)
+        .toPromise();
+      allData = allData.concat(res.data);
+      hasMore = res.pagination.hasMore;
+      page++;
+    }
+
+    return allData;
+  }
 }

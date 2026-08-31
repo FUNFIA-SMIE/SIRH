@@ -177,6 +177,8 @@ export class DemandeEnAttenteComponent implements OnInit {
     });
   }
 
+  
+
   async ngOnInit(): Promise<void> {
     await this.loadData();
 
@@ -199,65 +201,49 @@ export class DemandeEnAttenteComponent implements OnInit {
   }
 
   // ── Chargement ────────────────────────────────────────────
-  async loadData(): Promise<void> {
-    try {
-      // 1. Initialisation pour éviter les erreurs "undefined" dans le template
-      this.allDemandes = [];
-      this.filtered = [];
+async loadData(): Promise<void> {
+  try {
+    this.allDemandes = [];
+    this.filtered = [];
 
-      // 2. Récupération des données
-      const rawDemandes = await this.service.getAllConges_liste().toPromise() || [];
-      console.log('RAW DEMANDES:', rawDemandes);
-      console.log('Premier record:', rawDemandes[0]);
-      console.log('Clés du premier record:', Object.keys(rawDemandes[0] || {}));
-      this.typesConge = await this.service.getTypes().toPromise() || [];
-      this.listeEmployes = await this.service.getAllEmployees().toPromise() || [];
+    const rawDemandes = await this.service.getAllConges_liste_complet();
+    console.log('RAW DEMANDES:', rawDemandes);
+    this.typesConge = await this.service.getTypes().toPromise() || [];
+    this.listeEmployes = await this.service.getAllEmployees().toPromise() || [];
 
-      // 3. Transformation des données "plates" du SQL en format "imbriqué" pour le HTML
-      this.allDemandes = rawDemandes.map((d: any) => {
-        console.log(`Mapping demande ${d.id}:`, {
-          demi_journee_debut: d.demi_journee_debut,
-          demi_journee_fin: d.demi_journee_fin,
-          demiJourneeDebut_result: d.demi_journee_debut === true || d.demi_journee_debut === 't' || d.demi_journee_debut === 1,
-          demiJourneeFin_result: d.demi_journee_fin === true || d.demi_journee_fin === 't' || d.demi_journee_fin === 1
-        });
-        return {
-          ...d,
-          employe: {
-            nom: d.nom || '',
-            prenom: d.prenom || '',
-            matricule: d.matricule || '',
-            poste: d.poste || 'Collaborateur',
-            photo_url: d.photo_url || null,
-          },
-          typeConge: {
-            libelle: d.type_conge || '',
-            code: d.code_type || 'CP',
-            validation_rh: d.validation_rh || false
-          },
-          dateDebut: d.date_debut,
-          dateFin: d.date_fin,
-          nbJours: Number(d.nb_jours) || 0,
-          createdAt: d.created_at,
-          demiJourneeDebut: d.demi_journee_debut === true || d.demi_journee_debut === 't' || d.demi_journee_debut === 1,
-          demiJourneeFin: d.demi_journee_fin === true || d.demi_journee_fin === 't' || d.demi_journee_fin === 1,
-          soldeRestant: d.solde_restant || 0,
-          soldeInitial: d.solde_initial || 0,
-          commentaireRefus: d.commentaire_refus || null,  // ← manquait
-          workflow: d.workflow || [],
-          statut: d.statut || 'brouillon',              // ← manquait, crash sur .at(-1)
-          justificatifUrl: d.justificatif_url || null // ← manquait, crash sur .justificatifUrl
-        };
-      });
+    this.allDemandes = rawDemandes.map((d: any) => ({
+      ...d,
+      employe: {
+        nom: d.nom || '',
+        prenom: d.prenom || '',
+        matricule: d.matricule || '',
+        poste: d.poste || 'Collaborateur',
+        photo_url: d.photo_url || null,
+      },
+      typeConge: {
+        libelle: d.type_conge || '',
+        code: d.code_type || 'CP',
+        validation_rh: d.validation_rh || false
+      },
+      dateDebut: d.date_debut,
+      dateFin: d.date_fin,
+      nbJours: Number(d.nb_jours) || 0,
+      createdAt: d.created_at,
+      demiJourneeDebut: d.demi_journee_debut === true || d.demi_journee_debut === 't' || d.demi_journee_debut === 1,
+      demiJourneeFin: d.demi_journee_fin === true || d.demi_journee_fin === 't' || d.demi_journee_fin === 1,
+      soldeRestant: d.solde_restant || 0,
+      soldeInitial: d.solde_initial || 0,
+      commentaireRefus: d.commentaire_refus || null,
+      workflow: d.workflow || [],
+      statut: d.statut || 'brouillon',
+      justificatifUrl: d.justificatif_url || null
+    }));
 
-      console.log('Demandes restructurées :', this.allDemandes);
-      this.applyFilters();
-
-    } catch (error) {
-      console.error('Erreur lors du chargement', error);
-    }
+    this.applyFilters();
+  } catch (error) {
+    console.error('Erreur lors du chargement', error);
   }
-
+}
   applyFilters(): void {
     if (!this.allDemandes) return;
 

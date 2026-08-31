@@ -90,30 +90,30 @@ export class SoldesComponent implements OnInit {
 
   isLoadingHistorique = false;
 
-  async ouvrirHistorique(p: any): Promise<void> {
-    this.selectedPersonnel = p;
-    this.showHistorique = true;
-    this.histFilter = 'tous';
-    this.isModalOpen = false;
-    this.absencesData[p.id] = [];
-    this.isLoadingHistorique = true;
+async ouvrirHistorique(p: any): Promise<void> {
+  this.selectedPersonnel = p;
+  this.showHistorique = true;
+  this.histFilter = 'tous';
+  this.isModalOpen = false;
+  this.absencesData[p.id] = [];
+  this.isLoadingHistorique = true;
 
-    const data = await this.sirhService.getAllConges_liste().toPromise();
+  const data = await this.sirhService.getAllConges_liste_complet();
 
-    data?.filter((c: any) => c.employe_id === p.employe_id).forEach((c: any) => {
-      this.absencesData[p.id].push({
-        type: c.code_type,
-        label: this.type_conge_data?.find(t => t.code === c.code_type)?.libelle || c.code_type,
-        debut: c.date_debut,
-        fin: c.date_fin,
-        jours: c.nb_jours,
-        motif: c.motif,
-        statut: c.statut ?? 'approved',
-      });
+  data?.filter((c: any) => c.employe_id === p.employe_id).forEach((c: any) => {
+    this.absencesData[p.id].push({
+      type: c.code_type,
+      label: this.type_conge_data?.find(t => t.code === c.code_type)?.libelle || c.code_type,
+      debut: c.date_debut,
+      fin: c.date_fin,
+      jours: c.nb_jours,
+      motif: c.motif,
+      statut: c.statut ?? 'approved',
     });
+  });
 
-    this.isLoadingHistorique = false;
-  }
+  this.isLoadingHistorique = false;
+}
   fermerHistorique(): void {
     this.showHistorique = false;
     this.selectedPersonnel = null;
