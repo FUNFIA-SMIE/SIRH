@@ -232,7 +232,7 @@ export class ServiceSirhService {
 
   async getAllConges_liste_complet(): Promise<any[]> {
     let page = 1;
-    const limit = 200;
+    const limit = 15; // réduit pour éviter le dépassement Neon
     let allData: any[] = [];
     let hasMore = true;
 
