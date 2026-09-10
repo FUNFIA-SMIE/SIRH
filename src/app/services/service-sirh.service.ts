@@ -7,9 +7,9 @@ import { Observable, from } from 'rxjs';
 })
 export class ServiceSirhService {
 
-  //private url = 'http://192.168.88.200:3335';
+  private url = 'http://192.168.88.200:3335';
   //private url = 'http://localhost:3335';
-  private url = 'https://backend-sirh.onrender.com'
+  //private url = 'https://backend-sirh.onrender.com'
 
 
   constructor(private http: HttpClient) { }

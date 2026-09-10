@@ -34,9 +34,9 @@ export interface TypeEnumOption {
   providedIn: 'root',//
 })
 export class ServiceTypeCongeService {
-  //private readonly base = 'http://192.168.88.2000:3335/conges';
+  private readonly base = 'http://192.168.88.2000:3335/conges';
   //private readonly base = 'http://localhost:3335/conges';
-  private base = 'https://backend-sirh.onrender.com'
+  //private base = 'https://backend-sirh.onrender.com'
 
   constructor(private http: HttpClient) { }
 
