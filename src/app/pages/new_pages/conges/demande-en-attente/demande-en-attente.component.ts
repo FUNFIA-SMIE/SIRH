@@ -393,7 +393,11 @@ async loadData(): Promise<void> {
     console.log('Département pour la demande', departement);
     console.log('Poste pour la demande', poste);
 
-    if (departement.code === 'PARAMED' || departement.code === 'MED' || departement.code === 'DENT') {
+    if (departement.code === 'PARAMED' 
+      || departement.code === 'MED' 
+      || departement.code === 'DENT' 
+      || departement.code === 'DENTS' 
+      || departement.code === 'PMC') {
 
       if (d.statut === 'en_attente_manager') {
         // Bloquer si c'est le Directeur Exécutif (ne gère pas cette étape)

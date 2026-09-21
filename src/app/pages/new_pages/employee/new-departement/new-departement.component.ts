@@ -16,14 +16,14 @@ export class NewDepartementComponent implements OnInit {
   departments: any;
   employees: any;
   editMode = false;
-  currentDepartmentId: number | null = null;
+  currentDepartmentId: string | null = null;
 
   constructor(private router: Router, private route: ActivatedRoute, private sirhService: ServiceSirhService) {
     this.departmentForm = new FormGroup({
       code: new FormControl('', Validators.required),
       nom: new FormControl('', Validators.required),
       parent_id: new FormControl(null),
-      responsable_id: new FormControl(''),
+      responsable_id: new FormControl(null),
       /*
       budget_annuel: new FormControl('', [Validators.required, Validators.min(0)]),
       effectif_max: new FormControl('', [Validators.required, Validators.min(1)])
@@ -32,6 +32,8 @@ export class NewDepartementComponent implements OnInit {
   }
 
   ngOnInit() {
+    this.loadDepartments();
+    this.loadEmployees();
 
     this.route.queryParams.subscribe(params => {
       const id = params['id'];
@@ -43,7 +45,6 @@ export class NewDepartementComponent implements OnInit {
 
         this.sirhService.getDepartmentById(id).subscribe({
           next: (department: any) => {
-
             console.log('Département récupéré pour modification :', department);
 
             if (department) {
@@ -63,42 +64,6 @@ export class NewDepartementComponent implements OnInit {
             console.error('Impossible de récupérer le département pour modification', error);
           },
         });
-      }
-    });
-
-    this.loadDepartments();
-    this.loadEmployees();
-    this.checkEditMode();
-
-
-  }
-
-  checkEditMode() {
-    this.route.queryParams.subscribe((params) => {
-      const idParam = params['id'];
-      if (idParam) {
-        const id = Number(idParam);
-        if (!isNaN(id)) {
-          this.editMode = true;
-          this.currentDepartmentId = id;
-          this.sirhService.getDepartmentById(id).subscribe({
-            next: (department: any) => {
-              if (department) {
-                this.departmentForm.patchValue({
-                  code: department.code || department.code_departement || '',
-                  nom: department.nom || department.nom_departement || '',
-                  parent_id: department.parent_id || null,
-                  responsable_id: department.responsable_id || null,
-                  budget_annuel: department.budget_annuel || 0,
-                  effectif_max: department.effectif_max || 0,
-                });
-              }
-            },
-            error: (error) => {
-              console.error('Impossible de récupérer le département pour modification', error);
-            },
-          });
-        }
       }
     });
   }
@@ -139,28 +104,13 @@ export class NewDepartementComponent implements OnInit {
         parent_id: formValue.parent_id || null,
         code: formValue.code,
         nom: formValue.nom,
-        description: '', // No description in form
-        responsable_id: formValue.responsable_id,
-        budget_annuel: parseFloat(formValue.budget_annuel),
-        effectif_max: parseInt(formValue.effectif_max, 10)
+        description: '',
+        responsable_id: formValue.responsable_id || null,
+        budget_annuel: parseFloat(formValue.budget_annuel) || 0,
+        effectif_max: parseInt(formValue.effectif_max, 10) || 0
       };
 
-      console.log('Creating department:', department);
-
-/*
-      this.route.queryParams.subscribe((params) => {
-        const idParam = params['id'];
-        if (idParam) {
-          const id = Number(idParam);
-          if (!isNaN(id)) {
-            this.editMode = true;
-            this.currentDepartmentId = id;
-            console.log('Edit mode activated for department ID:', id);
-          }
-        }
-      });
-*/
-
+      console.log('Submitting department:', department);
 
       if (this.editMode && this.currentDepartmentId) {
         this.sirhService.updateDepartment(this.currentDepartmentId, department)
@@ -182,7 +132,6 @@ export class NewDepartementComponent implements OnInit {
           }
         });
       }
-
     }
   }
 
