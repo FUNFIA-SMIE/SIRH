@@ -29,6 +29,8 @@ export class CalendrierComponent implements OnInit {
   conges: Conge[] = [];
   selectedDay: Date | null = null;
   selectedDayConges: Conge[] = [];
+  isLoading = false;
+  errorMessage: string | null = null;
 
   constructor(private sirhService: ServiceSirhService) {}
 
@@ -77,38 +79,107 @@ export class CalendrierComponent implements OnInit {
     this.selectedDayConges = [];
   }
 
-  loadConges() {
-    // TODO: Replace with actual API call
-    // this.sirhService.getAllConges().subscribe(data => this.conges = data);
-    // Mock data
-    this.conges = [
-      {
-        id: '1',
-        employeNom: 'Jean Dupont',
-        typeConge: 'Congé Annuel',
-        dateDebut: new Date('2024-05-01'),
-        dateFin: new Date('2024-05-05'),
-        statut: 'approuve'
-      },
-      {
-        id: '2',
-        employeNom: 'Marie Martin',
-        typeConge: 'Congé Maladie',
-        dateDebut: new Date('2024-04-15'),
-        dateFin: new Date('2024-04-16'),
-        statut: 'en_attente'
+  async loadConges() {
+    this.isLoading = true;
+    this.errorMessage = null;
+
+    try {
+      // Utilise la même méthode que la liste des demandes pour récupérer TOUS les congés
+      const rawConges = await this.sirhService.getAllConges_liste_complet();
+
+      this.conges = (rawConges || []).map((c: any) => ({
+        id: c.id,
+        employeNom: this.formatNomEmploye(c),
+        typeConge: c.type_conge || c.libelle || 'Congé',
+        dateDebut: new Date(c.date_debut),
+        dateFin: new Date(c.date_fin),
+        // On ne garde que les 3 statuts gérés par le template
+        statut: c.statut === 'approuve' || c.statut === 'refuse' ? c.statut : 'en_attente'
+      }));
+
+      // Si un jour était sélectionné, on rafraîchit ses détails avec les nouvelles données
+      if (this.selectedDay) {
+        this.selectedDayConges = this.getCongesForDay(this.selectedDay);
       }
-    ];
+    } catch (error) {
+      console.error('Erreur lors du chargement des congés', error);
+      this.errorMessage = 'Impossible de charger les congés.';
+      this.conges = [];
+    } finally {
+      this.isLoading = false;
+    }
+  }
+
+  private formatNomEmploye(c: any): string {
+    if (c.prenom || c.nom) {
+      return `${c.prenom || ''} ${c.nom || ''}`.trim();
+    }
+    return c.employeNom || c.employe_nom || 'Employé';
   }
 
   getCongesForDay(date: Date): Conge[] {
-    return this.conges.filter(conge =>
-      date >= conge.dateDebut && date <= conge.dateFin
-    );
+    const target = this.stripTime(date);
+    return this.conges.filter(conge => {
+      const start = this.stripTime(conge.dateDebut);
+      const end = this.stripTime(conge.dateFin);
+      return target >= start && target <= end;
+    });
+  }
+
+  // Évite les bugs de comparaison de dates liés aux heures/minutes/secondes
+  private stripTime(date: Date): Date {
+    return new Date(date.getFullYear(), date.getMonth(), date.getDate());
   }
 
   selectDay(day: CalendarDay) {
     this.selectedDay = day.date;
     this.selectedDayConges = this.getCongesForDay(day.date);
+  }
+
+    // ... (tout le reste du fichier reste identique) ...
+
+  isToday(date: Date): boolean {
+    const today = new Date();
+    return date.getFullYear() === today.getFullYear() &&
+           date.getMonth() === today.getMonth() &&
+           date.getDate() === today.getDate();
+  }
+
+  goToToday() {
+    this.currentMonth = new Date();
+    this.generateCalendar();
+    this.selectedDay = null;
+    this.selectedDayConges = [];
+  }
+
+  get monthStats() {
+    const stats = { approuve: 0, en_attente: 0, refuse: 0 };
+    const year = this.currentMonth.getFullYear();
+    const month = this.currentMonth.getMonth();
+    const monthStart = new Date(year, month, 1);
+    const monthEnd = new Date(year, month + 1, 0);
+
+    this.conges.forEach(c => {
+      if (c.dateDebut <= monthEnd && c.dateFin >= monthStart) {
+        stats[c.statut as keyof typeof stats]++;
+      }
+    });
+    return stats;
+  }
+
+  avatarColor(nom: string): string {
+    const colors = [
+      'bg-blue-100 text-blue-600 dark:bg-blue-900/50 dark:text-blue-400',
+      'bg-purple-100 text-purple-600 dark:bg-purple-900/50 dark:text-purple-400',
+      'bg-pink-100 text-pink-600 dark:bg-pink-900/50 dark:text-pink-400',
+      'bg-teal-100 text-teal-600 dark:bg-teal-900/50 dark:text-teal-400',
+      'bg-orange-100 text-orange-600 dark:bg-orange-900/50 dark:text-orange-400',
+      'bg-indigo-100 text-indigo-600 dark:bg-indigo-900/50 dark:text-indigo-400',
+    ];
+    let hash = 0;
+    for (let i = 0; i < nom.length; i++) {
+      hash = nom.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    return colors[Math.abs(hash) % colors.length];
   }
 }

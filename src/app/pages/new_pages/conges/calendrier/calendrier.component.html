@@ -1,40 +1,107 @@
 <div class="p-4 sm:p-8 bg-slate-50 dark:bg-slate-950 min-h-screen transition-colors duration-300">
   <div class="max-w-6xl mx-auto">
-    
-    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
-      <div>
-        <h1 class="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-          Calendrier des Congés
-        </h1>
-        <p class="text-slate-500 dark:text-slate-400 mt-1">Gérez et visualisez les absences de l'équipe.</p>
+
+    <!-- Header -->
+    <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6">
+      <div class="flex items-center gap-3">
+        <div class="h-12 w-12 rounded-2xl bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-600/30 flex-shrink-0">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
+        </div>
+        <div>
+          <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+            Calendrier des Congés
+          </h1>
+          <p class="text-slate-500 dark:text-slate-400 text-sm mt-0.5">Gérez et visualisez les absences de l'équipe.</p>
+        </div>
       </div>
 
-      <div class="flex items-center bg-white dark:bg-slate-900 p-1 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800">
-        <button (click)="previousMonth()" 
-                class="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors text-slate-600 dark:text-slate-300">
+      <!-- Mini stats du mois -->
+      <div class="flex items-center gap-2 flex-wrap">
+        <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-900/40">
+          <span class="h-2 w-2 rounded-full bg-emerald-500"></span>
+          <span class="text-xs font-bold text-emerald-700 dark:text-emerald-400">{{ monthStats.approuve }}</span>
+          <span class="text-xs text-emerald-600/70 dark:text-emerald-500/70">approuvés</span>
+        </div>
+        <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-900/40">
+          <span class="h-2 w-2 rounded-full bg-amber-500"></span>
+          <span class="text-xs font-bold text-amber-700 dark:text-amber-400">{{ monthStats.en_attente }}</span>
+          <span class="text-xs text-amber-600/70 dark:text-amber-500/70">en attente</span>
+        </div>
+        <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-rose-50 dark:bg-rose-900/20 border border-rose-100 dark:border-rose-900/40">
+          <span class="h-2 w-2 rounded-full bg-rose-500"></span>
+          <span class="text-xs font-bold text-rose-700 dark:text-rose-400">{{ monthStats.refuse }}</span>
+          <span class="text-xs text-rose-600/70 dark:text-rose-500/70">refusés</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Barre de navigation -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
+      <div class="flex items-center bg-white dark:bg-slate-900 p-1 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 w-fit">
+        <button (click)="previousMonth()"
+                [disabled]="isLoading"
+                class="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors text-slate-600 dark:text-slate-300 disabled:opacity-40 disabled:cursor-not-allowed">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
           </svg>
         </button>
-        
+
         <h2 class="text-lg font-bold text-slate-800 dark:text-slate-100 px-6 min-w-[160px] text-center capitalize">
           {{ currentMonth | date:'MMMM yyyy' }}
         </h2>
 
-        <button (click)="nextMonth()" 
-                class="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors text-slate-600 dark:text-slate-300">
+        <button (click)="nextMonth()"
+                [disabled]="isLoading"
+                class="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors text-slate-600 dark:text-slate-300 disabled:opacity-40 disabled:cursor-not-allowed">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
           </svg>
         </button>
       </div>
+
+      <div class="flex items-center gap-3">
+        <!-- Légende -->
+        <div class="hidden md:flex items-center gap-4 text-xs font-medium text-slate-500 dark:text-slate-400">
+          <span class="flex items-center gap-1.5"><span class="h-2.5 w-2.5 rounded-full bg-emerald-500"></span>Approuvé</span>
+          <span class="flex items-center gap-1.5"><span class="h-2.5 w-2.5 rounded-full bg-amber-500"></span>En attente</span>
+          <span class="flex items-center gap-1.5"><span class="h-2.5 w-2.5 rounded-full bg-rose-500"></span>Refusé</span>
+        </div>
+        <button (click)="goToToday()"
+                class="px-3.5 py-2 text-xs font-bold uppercase tracking-wide rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shadow-sm">
+          Aujourd'hui
+        </button>
+      </div>
     </div>
 
-    <div class="bg-white dark:bg-slate-900 shadow-xl shadow-slate-200/50 dark:shadow-none rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800">
+    <!-- Message d'erreur -->
+    <div *ngIf="errorMessage"
+         class="mb-4 flex items-center gap-3 px-4 py-3 rounded-xl bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-900/50 text-rose-700 dark:text-rose-400 text-sm font-medium animate-in fade-in slide-in-from-top-2 duration-300">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+      </svg>
+      {{ errorMessage }}
+      <button (click)="loadConges()" class="ml-auto text-xs font-bold uppercase tracking-wide underline hover:no-underline">
+        Réessayer
+      </button>
+    </div>
+
+    <!-- Grille du calendrier -->
+    <div class="bg-white dark:bg-slate-900 shadow-xl shadow-slate-200/50 dark:shadow-none rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 relative">
+
+      <div *ngIf="isLoading"
+           class="absolute inset-0 z-20 flex items-center justify-center bg-white/70 dark:bg-slate-900/70 backdrop-blur-[1px]">
+        <svg class="animate-spin h-8 w-8 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+        </svg>
+      </div>
+
       <div class="grid grid-cols-7 gap-px bg-slate-200 dark:bg-slate-800">
-        
-        <div *ngFor="let day of weekDays" 
-             class="bg-slate-50 dark:bg-slate-900/50 px-4 py-4 text-center text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+
+        <div *ngFor="let day of weekDays"
+             class="bg-slate-50 dark:bg-slate-900/50 px-4 py-3.5 text-center text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
           {{ day }}
         </div>
 
@@ -46,26 +113,33 @@
                'ring-2 ring-inset ring-blue-500 z-10': selectedDay?.getTime() === day.date.getTime()
              }"
              (click)="day.isCurrentMonth && selectDay(day)">
-          
+
           <div class="flex justify-between items-center mb-2">
-            <span class="text-sm font-semibold"
-                  [ngClass]="day.isCurrentMonth ? 'text-slate-900 dark:text-slate-100' : 'text-slate-400'">
+            <span class="h-6 w-6 flex items-center justify-center text-sm font-semibold rounded-full"
+                  [ngClass]="{
+                    'bg-blue-600 text-white shadow-sm shadow-blue-600/40': isToday(day.date),
+                    'text-slate-900 dark:text-slate-100': day.isCurrentMonth && !isToday(day.date),
+                    'text-slate-400': !day.isCurrentMonth
+                  }">
               {{ day.date.getDate() }}
             </span>
+            <span *ngIf="getCongesForDay(day.date).length > 0 && day.isCurrentMonth"
+                  class="h-1.5 w-1.5 rounded-full bg-blue-400 opacity-0 group-hover:opacity-100 transition-opacity"></span>
           </div>
 
           <div class="space-y-1">
-            <div *ngFor="let conge of getCongesForDay(day.date) | slice:0:3" 
-                 class="text-[10px] px-2 py-1 rounded-md font-medium truncate shadow-sm transition-transform hover:scale-105"
+            <div *ngFor="let conge of getCongesForDay(day.date) | slice:0:3"
+                 class="flex items-center gap-1 text-[10px] px-2 py-1 rounded-md font-medium truncate shadow-sm transition-transform hover:scale-[1.03] border-l-2"
                  [ngClass]="{
-                    'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400': conge.statut === 'approuve',
-                    'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400': conge.statut === 'en_attente',
-                    'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400': conge.statut === 'refuse'
+                    'bg-emerald-100 text-emerald-700 border-emerald-500 dark:bg-emerald-900/30 dark:text-emerald-400': conge.statut === 'approuve',
+                    'bg-amber-100 text-amber-700 border-amber-500 dark:bg-amber-900/30 dark:text-amber-400': conge.statut === 'en_attente',
+                    'bg-rose-100 text-rose-700 border-rose-500 dark:bg-rose-900/30 dark:text-rose-400': conge.statut === 'refuse'
                  }"
                  [title]="conge.employeNom">
               {{ conge.employeNom }}
             </div>
-            <div *ngIf="getCongesForDay(day.date).length > 3" class="text-[9px] text-slate-400 text-center font-bold">
+            <div *ngIf="getCongesForDay(day.date).length > 3"
+                 class="text-[9px] text-blue-500 dark:text-blue-400 text-center font-bold hover:underline">
               + {{ getCongesForDay(day.date).length - 3 }} autres
             </div>
           </div>
@@ -73,15 +147,30 @@
       </div>
     </div>
 
-    <div *ngIf="selectedDay" 
+    <!-- État vide global -->
+    <div *ngIf="!isLoading && !errorMessage && conges.length === 0"
+         class="mt-6 flex flex-col items-center py-12 text-slate-400 bg-white dark:bg-slate-900 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mb-2 opacity-20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+      </svg>
+      <p class="text-sm">Aucun congé enregistré pour le moment.</p>
+    </div>
+
+    <!-- Panneau de détails -->
+    <div *ngIf="selectedDay"
          class="mt-8 bg-white dark:bg-slate-900 shadow-xl rounded-2xl p-6 border border-slate-200 dark:border-slate-800 animate-in fade-in slide-in-from-bottom-4 duration-300">
-      
+
       <div class="flex items-center justify-between mb-6">
-        <h3 class="text-xl font-bold text-slate-900 dark:text-white">
-          Détails du {{ selectedDay | date:'fullDate' }}
-        </h3>
-        <button (click)="selectedDay = null" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
-           <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <div class="flex items-center gap-2">
+          <h3 class="text-xl font-bold text-slate-900 dark:text-white capitalize">
+            {{ selectedDay | date:'fullDate' }}
+          </h3>
+          <span *ngIf="isToday(selectedDay)" class="px-2 py-0.5 text-[10px] font-bold uppercase rounded-full bg-blue-100 text-blue-600 dark:bg-blue-900/50 dark:text-blue-400">
+            Aujourd'hui
+          </span>
+        </div>
+        <button (click)="selectedDay = null" class="h-8 w-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 dark:hover:text-slate-200 transition-colors">
+           <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
           </svg>
         </button>
@@ -95,19 +184,20 @@
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div *ngFor="let conge of selectedDayConges" 
-             class="group p-4 rounded-xl border border-slate-100 dark:border-slate-800 hover:border-blue-200 dark:hover:border-blue-900 transition-all bg-slate-50/50 dark:bg-slate-800/40">
+        <div *ngFor="let conge of selectedDayConges"
+             class="group p-4 rounded-xl border border-slate-100 dark:border-slate-800 hover:border-blue-200 dark:hover:border-blue-900 hover:shadow-md transition-all bg-slate-50/50 dark:bg-slate-800/40">
           <div class="flex justify-between items-start">
             <div class="flex items-center gap-3">
-              <div class="h-10 w-10 rounded-full bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center text-blue-600 dark:text-blue-400 font-bold uppercase">
+              <div class="h-10 w-10 rounded-full flex items-center justify-center font-bold uppercase text-sm flex-shrink-0"
+                   [ngClass]="avatarColor(conge.employeNom)">
                 {{ conge.employeNom.substring(0,2) }}
               </div>
               <div>
-                <p class="font-bold text-slate-900 dark:text-slate-100">{{ conge.employeNom }}</p>
-                <p class="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">{{ conge.typeConge }}</p>
+                <p class="font-bold text-slate-900 dark:text-slate-100 leading-tight">{{ conge.employeNom }}</p>
+                <p class="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide mt-0.5">{{ conge.typeConge }}</p>
               </div>
             </div>
-            <span class="px-3 py-1 text-[10px] font-bold uppercase rounded-full tracking-wider"
+            <span class="px-3 py-1 text-[10px] font-bold uppercase rounded-full tracking-wider whitespace-nowrap"
                   [ngClass]="{
                     'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300': conge.statut === 'approuve',
                     'bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300': conge.statut === 'en_attente',
@@ -116,8 +206,8 @@
               {{ conge.statut.replace('_', ' ') }}
             </span>
           </div>
-          <div class="mt-4 flex items-center text-sm text-slate-600 dark:text-slate-400">
-             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <div class="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center text-sm text-slate-600 dark:text-slate-400">
+             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2 opacity-50 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
             </svg>
             Du {{ conge.dateDebut | date:'dd MMM' }} au {{ conge.dateFin | date:'dd MMM yyyy' }}
