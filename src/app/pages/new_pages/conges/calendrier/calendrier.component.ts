@@ -84,20 +84,20 @@ export class CalendrierComponent implements OnInit {
     this.errorMessage = null;
 
     try {
-      // Utilise la même méthode que la liste des demandes pour récupérer TOUS les congés
       const rawConges = await this.sirhService.getAllConges_liste_complet();
 
-      this.conges = (rawConges || []).map((c: any) => ({
-        id: c.id,
-        employeNom: this.formatNomEmploye(c),
-        typeConge: c.type_conge || c.libelle || 'Congé',
-        dateDebut: new Date(c.date_debut),
-        dateFin: new Date(c.date_fin),
-        // On ne garde que les 3 statuts gérés par le template
-        statut: c.statut === 'approuve' || c.statut === 'refuse' ? c.statut : 'en_attente'
-      }));
+      this.conges = (rawConges || [])
+        // Exclut les régularisations de solde ("AJUSTEMENTS"), qui ne sont pas de vraies absences
+        .filter((c: any) => !this.isAjustement(c))
+        .map((c: any) => ({
+          id: c.id,
+          employeNom: this.formatNomEmploye(c),
+          typeConge: c.type_conge || c.libelle || 'Congé',
+          dateDebut: new Date(c.date_debut),
+          dateFin: new Date(c.date_fin),
+          statut: c.statut === 'approuve' || c.statut === 'refuse' ? c.statut : 'en_attente'
+        }));
 
-      // Si un jour était sélectionné, on rafraîchit ses détails avec les nouvelles données
       if (this.selectedDay) {
         this.selectedDayConges = this.getCongesForDay(this.selectedDay);
       }
@@ -108,6 +108,13 @@ export class CalendrierComponent implements OnInit {
     } finally {
       this.isLoading = false;
     }
+  }
+
+  private isAjustement(c: any): boolean {
+    const champsAVerifier = [c.type_conge, c.libelle, c.motif, c.code_type];
+    return champsAVerifier.some(champ =>
+      typeof champ === 'string' && champ.toUpperCase().includes('AJUSTEMENT')
+    );
   }
 
   private formatNomEmploye(c: any): string {
