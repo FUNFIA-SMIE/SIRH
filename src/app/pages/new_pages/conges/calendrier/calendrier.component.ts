@@ -7,6 +7,8 @@ interface CalendarDay {
   isCurrentMonth: boolean;
 }
 
+type Periode = 'MATIN' | 'APRES_MIDI' | 'JOURNEE_COMPLETE';
+
 interface Conge {
   id: string;
   employeNom: string;
@@ -14,6 +16,7 @@ interface Conge {
   dateDebut: Date;
   dateFin: Date;
   statut: string;
+  raw: any; // donnée brute de l'API, conservée pour pouvoir affiner la détection facilement
 }
 
 @Component({
@@ -86,6 +89,11 @@ export class CalendrierComponent implements OnInit {
     try {
       const rawConges = await this.sirhService.getAllConges_liste_complet();
 
+      // Utile pour vérifier en une seconde le vrai nom des champs "demi-journée" de votre API :
+      if (rawConges && rawConges.length > 0) {
+        console.log('[Calendrier] Exemple de congé brut reçu de l\'API :', rawConges[0]);
+      }
+
       this.conges = (rawConges || [])
         // Exclut les régularisations de solde ("AJUSTEMENTS"), qui ne sont pas de vraies absences
         .filter((c: any) => !this.isAjustement(c))
@@ -95,7 +103,8 @@ export class CalendrierComponent implements OnInit {
           typeConge: c.type_conge || c.libelle || 'Congé',
           dateDebut: new Date(c.date_debut),
           dateFin: new Date(c.date_fin),
-          statut: c.statut === 'approuve' || c.statut === 'refuse' ? c.statut : 'en_attente'
+          statut: c.statut === 'approuve' || c.statut === 'refuse' ? c.statut : 'en_attente',
+          raw: c
         }));
 
       if (this.selectedDay) {
@@ -143,8 +152,6 @@ export class CalendrierComponent implements OnInit {
     this.selectedDayConges = this.getCongesForDay(day.date);
   }
 
-    // ... (tout le reste du fichier reste identique) ...
-
   isToday(date: Date): boolean {
     const today = new Date();
     return date.getFullYear() === today.getFullYear() &&
@@ -188,5 +195,77 @@ export class CalendrierComponent implements OnInit {
       hash = nom.charCodeAt(i) + ((hash << 5) - hash);
     }
     return colors[Math.abs(hash) % colors.length];
+  }
+
+  // ---- Détection demi-journée : calculée JOUR PAR JOUR, pas pour le congé entier ----
+  //
+  // Règle : dans un congé de plusieurs jours, seuls le premier jour (départ l'après-midi)
+  // et le dernier jour (retour le matin) peuvent être des demi-journées. Les jours au
+  // milieu sont toujours complets.
+  //
+  // ⚠️ Cette fonction regarde d'abord des champs explicites que l'API pourrait envoyer
+  // (periode_debut/periode_fin, demi_journee_debut/fin...), puis se rabat sur l'heure
+  // contenue dans date_debut/date_fin. Si vos dates n'ont pas d'heure (toujours 00:00:00),
+  // aucune des deux méthodes ne peut fonctionner : il faut alors le vrai nom du champ API
+  // (regardez le `console.log` ajouté dans loadConges(), visible dans la console du navigateur).
+  getPeriodePourJour(conge: Conge, date: Date): Periode {
+    const jour = this.stripTime(date);
+    const debut = this.stripTime(conge.dateDebut);
+    const fin = this.stripTime(conge.dateFin);
+    const uneSeuleJournee = debut.getTime() === fin.getTime();
+    const estPremierJour = jour.getTime() === debut.getTime();
+    const estDernierJour = jour.getTime() === fin.getTime();
+
+    if (!uneSeuleJournee && !estPremierJour && !estDernierJour) {
+      return 'JOURNEE_COMPLETE'; // jour au milieu d'un congé multi-jours
+    }
+
+    // 1) Champs explicites éventuels sur l'objet brut (à adapter selon votre API)
+    const c = conge.raw || {};
+    const champPourCeJour = uneSeuleJournee
+      ? (c.periode ?? c.type_periode ?? c.moment ?? c.session)
+      : estPremierJour
+        ? (c.periode_debut ?? c.demi_journee_debut ?? c.moment_debut)
+        : (c.periode_fin ?? c.demi_journee_fin ?? c.moment_fin);
+
+    if (typeof champPourCeJour === 'string') {
+      const val = champPourCeJour.toUpperCase();
+      if (val.includes('MATIN') || val === 'AM' || val === 'MORNING') return 'MATIN';
+      if (val.includes('APRES') || val.includes('MIDI') || val === 'PM' || val === 'AFTERNOON') return 'APRES_MIDI';
+    }
+
+    // 2) Repli sur l'heure de la date de début/fin
+    const heureDebut = conge.dateDebut.getHours();
+    const heureFin = conge.dateFin.getHours();
+
+    if (uneSeuleJournee) {
+      if (heureDebut >= 12) return 'APRES_MIDI';
+      if (heureFin > 0 && heureFin <= 13) return 'MATIN';
+      return 'JOURNEE_COMPLETE';
+    }
+    if (estPremierJour && heureDebut >= 12) return 'APRES_MIDI';
+    if (estDernierJour && heureFin > 0 && heureFin <= 13) return 'MATIN';
+
+    return 'JOURNEE_COMPLETE';
+  }
+
+  isHalfDay(conge: Conge, date: Date): boolean {
+    return this.getPeriodePourJour(conge, date) !== 'JOURNEE_COMPLETE';
+  }
+
+  periodeLabelPourJour(conge: Conge, date: Date): string {
+    switch (this.getPeriodePourJour(conge, date)) {
+      case 'MATIN': return 'Demi-journée (matin)';
+      case 'APRES_MIDI': return 'Demi-journée (après-midi)';
+      default: return 'Journée complète';
+    }
+  }
+
+  periodeAbrege(conge: Conge, date: Date): string {
+    switch (this.getPeriodePourJour(conge, date)) {
+      case 'MATIN': return 'MATIN';
+      case 'APRES_MIDI': return 'APRES-MIDI';
+      default: return '';
+    }
   }
 }
