@@ -185,7 +185,7 @@ export class ServiceSirhService {
     return this.http.post(`${this.url}/conges`, data);
   }
 
-  // Liste des types pour le formulaire (CP, CSS, etc.)
+  // Liste des types pour le formulaire (CP, CSS, etc.g)
   getTypes(): Observable<any> {
     return this.http.get(`${this.url}/conges/type_conge`);
   }
